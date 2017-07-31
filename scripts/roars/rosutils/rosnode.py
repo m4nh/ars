@@ -142,7 +142,6 @@ class RosNode(object):
 
     def getFileInPackage(self, pkg_name, file_path):
         pack_path = self.rospack.get_path(pkg_name)
-        print("Pack path", pack_path)
         return os.path.join(pack_path, file_path)
 
     def getRosParameter(self, parameter_name, default_value, type=RosParamType.PRIVATE_PARAM):

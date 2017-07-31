@@ -3,3 +3,5 @@ python:
 numpy
 PyKDL 
 yaml
+
+aruco
