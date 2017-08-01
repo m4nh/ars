@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>main_window</class>
+ <widget class="QMainWindow" name="main_window">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1000</width>
+    <height>700</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+QMainWindow{
+	background:#222;
+}
+QWidged{
+background:#37474F;
+}
+QPushButton
+{
+   background-color:#039BE5;
+   border:none;
+   color: white;
+}
+QLabel{
+font: 50 14pt &quot;Ubuntu&quot;;
+color:white;
+}
+QPushButton:hover
+{
+   background-color:#03A9F4 !important;
+   border:none;
+}
+QGroupBox{
+	font: 25 14pt &quot;Ubuntu&quot;;
+	color:white;
+	font-size: 11pt 
+}
+
+QDoubleSpinBox{
+		background:#4CAF50;
+		color:white;
+	font: 25 14pt &quot;Ubuntu&quot;;
+}
+QDoubleSpinBox::down-arrow,QDoubleSpinBox::up-arrow {
+ width: 15px;
+    height:15px;
+	margin:0;
+	padding:0;
+}
+
+QDoubleSpinBox::down-arrow {
+    image: url(/home/daniele/work/ros/roars_ws/src/roars/data/gui_forms/images/minus.ico);
+}
+QDoubleSpinBox::up-arrow {
+    image: url(/home/daniele/work/ros/roars_ws/src/roars/data/gui_forms/images/plus.ico);
+  
+}
+QDoubleSpinBox::up-button, QDoubleSpinBox::down-button  {
+	width:15px;
+	border:none;
+}
+QDoubleSpinBox::down-button:hover,QDoubleSpinBox::up-button:hover {
+  background:#aaa;
+}
+</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
+   <widget class="QLabel" name="image">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>640</width>
+      <height>480</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>640</width>
+      <height>480</height>
+     </size>
+    </property>
+    <property name="baseSize">
+     <size>
+      <width>640</width>
+      <height>480</height>
+     </size>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">border:1px solid #aaa;
+background:#bbb</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="ui_button_next_frame">
+    <property name="geometry">
+     <rect>
+      <x>300</x>
+      <y>610</y>
+      <width>111</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+    <property name="text">
+     <string>Next</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="ui_button_back_frame">
+    <property name="geometry">
+     <rect>
+      <x>190</x>
+      <y>610</y>
+      <width>101</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+    <property name="text">
+     <string>Prev</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_current_frame">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>590</y>
+      <width>141</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Current Frame: 0</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="ui_spin_frame_step">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>620</y>
+      <width>101</width>
+      <height>26</height>
+     </rect>
+    </property>
+    <property name="value">
+     <number>10</number>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="ui_button_load_raw_objects">
+    <property name="geometry">
+     <rect>
+      <x>660</x>
+      <y>260</y>
+      <width>331</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+    <property name="text">
+     <string>Load Raw Objects</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="ui_button_load_classification">
+    <property name="geometry">
+     <rect>
+      <x>660</x>
+      <y>10</y>
+      <width>331</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+    <property name="text">
+     <string>Load Classification Configuration</string>
+    </property>
+   </widget>
+   <widget class="QGroupBox" name="groupBox">
+    <property name="geometry">
+     <rect>
+      <x>660</x>
+      <y>50</y>
+      <width>331</width>
+      <height>201</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>Classification Configuration</string>
+    </property>
+    <widget class="QListWidget" name="list_classes">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>50</y>
+       <width>311</width>
+       <height>141</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>30</y>
+       <width>67</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Name:</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="ui_label_classification_configuration_name">
+     <property name="geometry">
+      <rect>
+       <x>90</x>
+       <y>30</y>
+       <width>221</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Ubuntu</family>
+       <pointsize>14</pointsize>
+       <weight>6</weight>
+       <italic>false</italic>
+       <bold>false</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Untitled</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QGroupBox" name="groupBox_2">
+    <property name="geometry">
+     <rect>
+      <x>660</x>
+      <y>300</y>
+      <width>331</width>
+      <height>191</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>Instances</string>
+    </property>
+    <widget class="QListView" name="ui_listm_instances">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>30</y>
+       <width>311</width>
+       <height>151</height>
+      </rect>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QDoubleSpinBox" name="ui_spin_frame_roll">
+    <property name="geometry">
+     <rect>
+      <x>750</x>
+      <y>510</y>
+      <width>121</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="suffix">
+     <string>°</string>
+    </property>
+    <property name="decimals">
+     <number>1</number>
+    </property>
+    <property name="minimum">
+     <double>-180.000000000000000</double>
+    </property>
+    <property name="maximum">
+     <double>180.000000000000000</double>
+    </property>
+    <property name="singleStep">
+     <double>0.500000000000000</double>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="ui_spin_frame_z">
+    <property name="geometry">
+     <rect>
+      <x>750</x>
+      <y>570</y>
+      <width>121</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="suffix">
+     <string> m</string>
+    </property>
+    <property name="decimals">
+     <number>3</number>
+    </property>
+    <property name="minimum">
+     <double>-180.000000000000000</double>
+    </property>
+    <property name="maximum">
+     <double>180.000000000000000</double>
+    </property>
+    <property name="singleStep">
+     <double>0.001000000000000</double>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1000</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuGeneric_TF_Task">
+    <property name="title">
+     <string>Generic TF Task</string>
+    </property>
+   </widget>
+   <addaction name="menuGeneric_TF_Task"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

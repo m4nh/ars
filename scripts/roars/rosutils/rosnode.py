@@ -164,3 +164,6 @@ class RosNode(object):
 
     def getLogger(self):
         return Logger
+
+    def close(self, reason=0):
+        rospy.signal_shutdown(reason)
