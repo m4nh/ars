@@ -4,6 +4,7 @@
 import os
 from PyQt4 import QtCore, QtGui, uic
 from PyQt4.QtGui import *
+from PyQt4.QtCore import *
 import sys
 import signal
 import numpy as np
@@ -94,3 +95,27 @@ class PyQtWindow(QtGui.QMainWindow):
     def run(self):
         self.show()
         sys.exit(self.qt_application.exec_())
+
+    def showDialog(self, text='', title="Info", info="", details="", buttons=QMessageBox.Ok | QMessageBox.Cancel, callback=None):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setText(text)
+        msg.setInformativeText(info)
+        msg.setWindowTitle(title)
+        msg.setDetailedText(details)
+        msg.setStandardButtons(buttons)
+        if callback:
+            msg.buttonClicked.connect(callback)
+
+        retval = msg.exec_()
+        return retval
+
+    def showPromptBool(self, title='', message='', yes_msg=QtGui.QMessageBox.Yes, no_msg=QtGui.QMessageBox.No):
+        reply = QtGui.QMessageBox.question(
+            self,
+            title,
+            message,
+            yes_msg,
+            no_msg
+        )
+        return reply == QtGui.QMessageBox.Yes

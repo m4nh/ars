@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
-from roars.datasets.datasetutils import TrainingScene
+from roars.datasets.datasetutils import TrainingScene, TrainingClassesMap, TrainingClass
 from roars.rosutils.rosnode import RosNode
 from roars.datasets.datasetutils import JSONHelper
 from roars.gui.pyqtutils import PyQtWindow, PyQtImageConverter
@@ -9,6 +9,8 @@ from roars.vision.augmentereality import VirtualObject
 from PyQt4 import QtCore
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+from PyQt4.QtGui import QFileDialog
+import PyQt4.QtGui as QtGui
 import PyKDL
 import sys
 import cv2
@@ -20,55 +22,97 @@ node = RosNode("roars_dataset_explorer")
 
 scene_manifest_file = node.setupParameter("scene_manifest_file", '')
 
-#⬢⬢⬢⬢⬢➤ Create Scenes
-scene = TrainingScene.loadFromFile(scene_manifest_file)
-
-
-#⬢⬢⬢⬢⬢➤ Save Scene to file if it is valid
-if scene.isValid():
-    print("Scene ready!")
-else:
-    print("Scene is not valid!")
-    sys.exit(0)
-
-
-print(scene.robot_to_camera_pose)
-
-frames = scene.getAllFrames()
-print(len(frames))
-
-current_frame = 0
-
 
 class MainWindow(PyQtWindow):
 
-    def __init__(self, uifile, scene):
+    def __init__(self, uifile):
         super(MainWindow, self).__init__(uifile)
-        self.image.mousePressEvent = self.getPos
 
-        print("Style", self.styleSheet())
+        #⬢⬢⬢⬢⬢➤ Scene Management
+        self.scene_filename = ''
+        self.scene = None
+        self.frames = None
 
         #⬢⬢⬢⬢⬢➤ Frame Management
-        self.scene = scene
-        self.frames = scene.getAllFrames()
         self.current_frame_index = -1
         self.current_frame = None
         self.current_image = np.zeros((50, 50))
-
-        #⬢⬢⬢⬢⬢➤ Instances_management
-        self.temporary_instances = []
-        self.selected_instance = -1
-        self.ui_spin_frame_roll.valueChanged.connect(self.frameValuesChanged)
-        self.ui_spin_frame_z.valueChanged.connect(self.frameValuesChanged)
-
-        ##
         self.ui_button_next_frame.clicked.connect(self.nextFrame)
         self.ui_button_back_frame.clicked.connect(self.backFrame)
 
-        ##
-        self.ui_button_load_raw_objects.clicked.connect(self.loadRawObjects)
+        #⬢⬢⬢⬢⬢➤ Instances_management
+        self.ui_button_load_raw_objects.clicked.connect(
+            self.loadRawObjects
+        )
+        self.ui_combo_frame_classes.currentIndexChanged.connect(
+            self.comboBoxChanged
+        )
+        self.temporary_instances = []
+        self.selected_instance = -1
+        self.frame_coordinates_attributes = {
+            "cx": 1, "cy": 1, "cz": 1, "roll": np.pi / 180.0, "pitch": np.pi / 180.0, "yaw": np.pi / 180.0}
+        for attr, _ in self.frame_coordinates_attributes.iteritems():
+            name = "ui_spin_frame_{}".format(attr)
+            getattr(self, name).valueChanged.connect(self.frameValuesChanged)
+
+        #⬢⬢⬢⬢⬢➤ Classes Management
+        self.temporary_class_map = None
         self.ui_button_load_classification.clicked.connect(
             self.loadClassificationCfg)
+        self.ui_list_classes.currentIndexChanged.connect(self.comboBoxChanged)
+
+        #⬢⬢⬢⬢⬢➤ Storage Management
+        self.ui_button_save.clicked.connect(self.save)
+
+    def initScene(self, scene_filename=''):
+
+        self.scene_filename = scene_filename
+
+        #⬢⬢⬢⬢⬢➤ Create Scenes
+        scene = TrainingScene.loadFromFile(scene_manifest_file)
+
+        if scene == None:
+            self.showDialog("Scene file is not valid!")
+            sys.exit(0)
+
+        if not scene.isValid():
+            self.showDialog("Scene file is corrupted!")
+            sys.exit(0)
+
+        #⬢⬢⬢⬢⬢➤ Init
+        self.scene = scene
+        self.frames = scene.getAllFrames()
+
+        self.nextFrame()
+
+        #⬢⬢⬢⬢⬢➤ Check Ready Classes/INstances
+        if len(self.scene.classes) > 0:
+            self.temporary_instances = self.scene.getAllInstances()
+            self.refreshInstacesList()
+            self.setClassMap(self.scene.generateClassesMap())
+
+        self.refresh()
+
+    def save(self):
+        self.scene.setClasses(
+            TrainingClass.generateClassListFromInstances(
+                self.temporary_instances, classes_map=self.temporary_class_map)
+        )
+        if self.showPromptBool(title='Saving Scene', message='Are you sure?'):
+            self.scene.save(self.scene_filename)
+
+    def comboBoxChanged(self, index):
+        combo = self.sender()
+        if "classes" in combo.objectName():
+            color = TrainingClass.getColorByLabel(index - 1, output_type="HEX")
+            combo.setStyleSheet(
+                "QComboBox::drop-down {background: " + color + ";}")
+
+            inst = self.getSelectedInstance()
+            if inst:
+                inst.label = index - 1
+
+            self.refresh()
 
     def getSelectedInstance(self):
         try:
@@ -80,25 +124,47 @@ class MainWindow(PyQtWindow):
         inst = self.getSelectedInstance()
         if inst != None:
             obj_name = self.sender().objectName()
-            if 'roll' in obj_name:
-                roll = v * np.pi / 180.0
-                inst.setRPY(roll, None, None)
-
-            if 'z' in obj_name:
-                z = v
-                inst.p.z(z)
+            for attr, conv in self.frame_coordinates_attributes.iteritems():
+                if attr in obj_name:
+                    inst.setFrameProperty(attr, v * conv)
 
             self.refresh()
 
+    def setClassMap(self, class_map):
+        self.temporary_class_map = class_map
+        self.updateListWithClassesMap(
+            self.ui_list_classes,
+            self.temporary_class_map
+        )
+        self.updateListWithClassesMap(
+            self.ui_combo_frame_classes,
+            self.temporary_class_map
+        )
+
     def loadClassificationCfg(self):
         fname = QFileDialog.getOpenFileName(
-            self, 'Load Classification Configuration', '', "Roars Classification Configurations (*.clc)")
+            self,
+            'Load Classification Configuration',
+            '',
+            "Roars Classification Configurations (*.clc)"
+        )
 
         cfg = JSONHelper.loadFromFile(fname)
-        self.list_classes.clear()
-        for cl in cfg["classes"]:
-            self.list_classes.insertItem(self.list_classes.count(), cl)
-        self.label_classification_configuration_name.setText(cfg["name"])
+        self.setClassMap(TrainingClassesMap(cfg["classes"]))
+
+    def updateListWithClassesMap(self, ui_list, class_map):
+        ui_list.clear()
+        model = ui_list.model()
+        for k, v in class_map.map().iteritems():
+            print("@", k, v)
+            item = QtGui.QStandardItem(v)
+            color = TrainingClass.getColorByLabel(k)
+            item.setForeground(QtGui.QColor(color[2], color[1], color[0]))
+            font = item.font()
+            font.setPointSize(10)
+            item.setFont(font)
+            model.appendRow(item)
+            #ui_list.insertItem(ui_list.count(), item)
 
     def loadRawObjects(self):
         fname = QFileDialog.getOpenFileName(
@@ -120,7 +186,7 @@ class MainWindow(PyQtWindow):
             inst = self.temporary_instances[i]
             item = QStandardItem()
             item.setText("Instance_{}".format(i))
-            item.setCheckable(True)
+            item.setCheckable(False)
             list_model.appendRow(item)
 
         self.ui_listm_instances.setModel(list_model)
@@ -137,8 +203,12 @@ class MainWindow(PyQtWindow):
             inst_rpy = inst.getRPY()
 
             #⬢⬢⬢⬢⬢➤ Update gui fields
-            self.ui_spin_frame_roll.setValue(inst_rpy[0] * 180.0 / np.pi)
-            self.ui_spin_frame_z.setValue(inst.p.z())
+            for attr, conv in self.frame_coordinates_attributes.iteritems():
+                name = "ui_spin_frame_{}".format(attr)
+                getattr(self, name).setValue(
+                    inst.getFrameProperty(attr) / conv)
+
+            self.ui_combo_frame_classes.setCurrentIndex(inst.label + 1)
 
             print(inst_rpy)
         self.refresh()
@@ -165,12 +235,17 @@ class MainWindow(PyQtWindow):
         for i in range(0, len(self.temporary_instances)):
             inst = self.temporary_instances[i]
             vo = VirtualObject(frame=inst, size=inst.size, label=inst.label)
-            thick = 1 if self.selected_instance != i else 5
+            thick = 1 if self.selected_instance != i else 4
+
+            color = TrainingClass.getColorByLabel(
+                inst.label, output_type="RGB")
+
             vo.draw(
                 img,
                 camera_frame=self.current_frame.getCameraPose(),
                 camera=self.scene.camera_params,
-                thickness=thick
+                thickness=thick,
+                color=color
             )
 
     def refresh(self):
@@ -191,11 +266,14 @@ class MainWindow(PyQtWindow):
         y = event.pos().y()
         print(x, y)
 
+    def temp(self, v):
+        print(self.ui_list_classes.itemText(v))
+
 
 window = MainWindow(
-    uifile='/home/daniele/work/ros/roars_ws/src/roars/data/gui_forms/arp_gui.ui',
-    scene=scene
+    uifile='/home/daniele/work/ros/roars_ws/src/roars/data/gui_forms/arp_gui.ui'
 )
+window.initScene(scene_filename=scene_manifest_file)
 window.run()
 
 

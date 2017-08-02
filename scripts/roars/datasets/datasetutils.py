@@ -10,6 +10,7 @@ import shutil
 import roars.geometry.transformations as transformations
 import roars.vision.colors as colors
 from roars.vision.augmentereality import *
+import collections
 
 
 class CustomJSONEncoder(json.JSONEncoder):
@@ -258,6 +259,20 @@ class TrainingScene(object):
     def getName(self):
         return os.path.basename(self.scene_path)
 
+    def setClasses(self, classes):
+        self.classes = collections.OrderedDict(
+            sorted(classes.items())
+        )
+
+    def getClassesAsList(self):
+        l = []
+        for k, v in self.classes.iteritems():
+            l.append(k)
+        return l
+
+    def generateClassesMap(self):
+        return TrainingClassesMap(class_list=self.getClassesAsList())
+
     def clearClasses(self):
         self.classes = {}
 
@@ -328,6 +343,8 @@ class TrainingScene(object):
     def loadFromFile(filename):
         f = open(filename)
         sc = json.loads(f.read(), object_hook=CustomJSONDecoder.decode)
+        if not isinstance(sc, TrainingScene):
+            return None
         return sc
 
     def getTrainingClassByLabel(self, label):
@@ -350,13 +367,14 @@ class TrainingScene(object):
 
 class TrainingClass(object):
     CLASSES_COLOR_MAP = {
-        0: colors.getColor(name='red', out_type='BGR'),
-        1: colors.getColor(name='blue', out_type='BGR'),
-        2: colors.getColor(name='teal', out_type='BGR'),
-        3: colors.getColor(name='lime', out_type='BGR'),
-        4: colors.getColor(name='orange', out_type='BGR'),
-        5: colors.getColor(name='amber', out_type='BGR'),
-        6: colors.getColor(name='indigo', out_type='BGR')
+        -1: 'white',
+        0: 'red',
+        1: 'blue',
+        2: 'teal',
+        3: 'lime',
+        4: 'orange',
+        5: 'amber',
+        6: 'indigo'
     }
 
     def __init__(self, label=-1, name=""):
@@ -377,11 +395,75 @@ class TrainingClass(object):
         return self.name
 
     @staticmethod
-    def getColorByLabel(label):
-        if label in TrainingClass.CLASSES_COLOR_MAP:
-            return TrainingClass.CLASSES_COLOR_MAP[label]
-        if int(label) in TrainingClass.CLASSES_COLOR_MAP:
-            return TrainingClass.CLASSES_COLOR_MAP[int(label)]
+    def generateClassListFromInstances(instances, classes_map=None):
+        classes = {}
+        for inst in instances:
+            if inst.label not in classes:
+                name = ""
+                if classes_map:
+                    name = classes_map.getClassName(inst.label)
+                classes[inst.label] = TrainingClass(
+                    label=inst.label, name=name)
+            classes[inst.label].instances.append(inst)
+        return classes
+
+    @staticmethod
+    def getColorByLabel(label, output_type="BGR"):
+
+        if label not in TrainingClass.CLASSES_COLOR_MAP:
+            label = label % len(TrainingClass.CLASSES_COLOR_MAP)
+
+        name = TrainingClass.CLASSES_COLOR_MAP[label]
+        return colors.getColor(name=name, out_type=output_type)
+
+########################################################################################
+########################################################################################
+########################################################################################
+########################################################################################
+########################################################################################
+########################################################################################
+
+
+class TrainingClassesMap(object):
+    DEFAULT_NOCLASS_NAME = "No-Class"
+
+    def __init__(self, class_list):
+
+        self.class_map = {}
+        az_classes = sorted(class_list)
+        az_classes.insert(0, TrainingClassesMap.DEFAULT_NOCLASS_NAME)
+        for i in range(0, len(az_classes)):
+            self.class_map[i - 1] = az_classes[i]
+        self.class_map = collections.OrderedDict(
+            sorted(self.class_map.items())
+        )
+
+    def map(self):
+        return self.class_map
+
+    def getClassName(self, class_index):
+        if class_index in self.class_map:
+            return self.class_map[class_index]
+        else:
+            return None
+
+    def getClassIndex(self, class_name):
+        for k, v in self.class_map.iteritems():
+            if v == class_name:
+                return k
+        return None
+
+    def getUserFriendlyStringList(self):
+        l = []
+        for k, v in self.class_map.iteritems():
+            l.append("{} [{}]".format(v, k))
+        return l
+
+    def userFriendlyStringToPair(self, ustr):
+        ustr = ustr.replace("[", "").replace("]", "")
+        k = int(ustr.split(" ")[0])
+        v = str(ustr.split(" ")[0])
+        return k, v
 
 ########################################################################################
 ########################################################################################
@@ -409,6 +491,34 @@ class TrainingInstance(PyKDL.Frame):
         p2 = p if p2 == None else p2
         y2 = y if y2 == None else y2
         self.M = PyKDL.Rotation.RPY(r2, p2, y2)
+
+    def setFrameProperty(self, name, value):
+        if name == 'cx':
+            self.p.x(value)
+        if name == 'cy':
+            self.p.y(value)
+        if name == 'cz':
+            self.p.z(value)
+        if name == 'roll':
+            self.setRPY(value, None, None)
+        if name == 'pitch':
+            self.setRPY(None, value, None)
+        if name == 'yaw':
+            self.setRPY(None, None, value)
+
+    def getFrameProperty(self, name):
+        if name == 'cx':
+            return self.p.x()
+        if name == 'cy':
+            return self.p.y()
+        if name == 'cz':
+            return self.p.z()
+        if name == 'roll':
+            return self.getRPY()[0]
+        if name == 'pitch':
+            return self.getRPY()[1]
+        if name == 'yaw':
+            return self.getRPY()[2]
 
     def toJSON(self):
         data = {}
