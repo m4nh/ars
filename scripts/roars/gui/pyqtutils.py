@@ -84,8 +84,20 @@ class PyQtImageConverter(object):
 #######################################################################
 
 
+class PyQtWidget(QtGui.QWidget):
+    def __init__(self, uifile):
+        super(PyQtWidget, self).__init__()
+        uic.loadUi(uifile, self)
+
+#######################################################################
+#######################################################################
+#######################################################################
+#######################################################################
+#######################################################################
+
+
 class PyQtWindow(QtGui.QMainWindow):
-    def __init__(self, uifile, namespace="default"):
+    def __init__(self, uifile):
         self.qt_application = QApplication(sys.argv)
         super(PyQtWindow, self).__init__()
         uic.loadUi(uifile, self)

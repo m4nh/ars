@@ -4,7 +4,9 @@
 from roars.datasets.datasetutils import TrainingScene, TrainingClassesMap, TrainingClass
 from roars.rosutils.rosnode import RosNode
 from roars.datasets.datasetutils import JSONHelper
-from roars.gui.pyqtutils import PyQtWindow, PyQtImageConverter
+from roars.gui.pyqtutils import PyQtWindow, PyQtImageConverter, PyQtWidget
+from roars.gui.widgets.WBaseWidget import WBaseWidget
+from roars.gui.widgets.WSceneFrameVisualizer import WSceneFrameVisualizer
 from roars.vision.augmentereality import VirtualObject
 from PyQt4 import QtCore
 from PyQt4.QtCore import *
@@ -22,6 +24,10 @@ node = RosNode("roars_dataset_explorer")
 
 scene_manifest_file = node.setupParameter("scene_manifest_file", '')
 
+WBaseWidget.DEFAULT_UI_WIDGETS_FOLDER = node.getFileInPackage(
+    'roars', 'data/gui_forms/widgets'
+)
+
 
 class MainWindow(PyQtWindow):
 
@@ -33,12 +39,24 @@ class MainWindow(PyQtWindow):
         self.scene = None
         self.frames = None
 
-        #⬢⬢⬢⬢⬢➤ Frame Management
-        self.current_frame_index = -1
-        self.current_frame = None
-        self.current_image = np.zeros((50, 50))
-        self.ui_button_next_frame.clicked.connect(self.nextFrame)
-        self.ui_button_back_frame.clicked.connect(self.backFrame)
+        #⬢⬢⬢⬢⬢➤ Frame Visualizers Management
+        self.ui_scene_visualizers_list = [
+            WSceneFrameVisualizer(),
+            WSceneFrameVisualizer(),
+            WSceneFrameVisualizer(),
+            WSceneFrameVisualizer(),
+            WSceneFrameVisualizer()
+        ]
+        self.ui_view_single_container.addWidget(
+            self.ui_scene_visualizers_list[0]
+        )
+        self.ui_view_container_1.addWidget(self.ui_scene_visualizers_list[1])
+        self.ui_view_container_2.addWidget(self.ui_scene_visualizers_list[2])
+        self.ui_view_container_3.addWidget(self.ui_scene_visualizers_list[3])
+        self.ui_view_container_4.addWidget(self.ui_scene_visualizers_list[4])
+        self.ui_main_tab.currentChanged.connect(self.refreshVisualizers)
+        self.ui_button_randomize_views.clicked.connect(
+            self.randomizeVisualizers)
 
         #⬢⬢⬢⬢⬢➤ Instances_management
         self.ui_button_load_raw_objects.clicked.connect(
@@ -72,7 +90,6 @@ class MainWindow(PyQtWindow):
         self.ui_button_save.clicked.connect(self.save)
 
     def initScene(self, scene_filename=''):
-
         self.scene_filename = scene_filename
 
         #⬢⬢⬢⬢⬢➤ Create Scenes
@@ -90,17 +107,32 @@ class MainWindow(PyQtWindow):
         self.scene = scene
         self.frames = scene.getAllFrames()
 
-        self.nextFrame()
-
         #⬢⬢⬢⬢⬢➤ Check Ready Classes/INstances
         if len(self.scene.classes) > 0:
-            # self.temporary_instances = self.scene.getAllInstances()
-            # self.refreshInstacesList()
-            # self.setClassMap(self.scene.generateClassesMap())
             self.updateClassLists(scene.classes)
             self.setInstances(scene.getAllInstances())
 
         self.refresh()
+
+        self.initSceneForVisualizers(scene)
+        self.randomizeVisualizers()
+        QtCore.QTimer.singleShot(200, self.refreshVisualizers)
+
+    def resizeEvent(self, event):
+        print("resize")
+        # self.refreshVisualizers()
+
+    def initSceneForVisualizers(self, scene):
+        for ui in self.ui_scene_visualizers_list:
+            ui.initScene(self.scene)
+
+    def randomizeVisualizers(self):
+        for ui in self.ui_scene_visualizers_list:
+            ui.randomFrame()
+
+    def refreshVisualizers(self):
+        for ui in self.ui_scene_visualizers_list:
+            ui.refresh()
 
     def save(self):
         if self.showPromptBool(title='Saving Scene', message='Are you sure?'):
@@ -243,6 +275,9 @@ class MainWindow(PyQtWindow):
             inst = self.temporary_instances[index]
             inst_rpy = inst.getRPY()
             self.updateInstanceValues(inst)
+            for ui in self.ui_scene_visualizers_list:
+                ui.setSelectedInstance(inst)
+
         self.refresh()
 
     def nextFrame(self):
@@ -281,17 +316,17 @@ class MainWindow(PyQtWindow):
             )
 
     def refresh(self):
+        self.refreshVisualizers()
+        # display_image = self.current_image.copy()
+        # self.drawInstances(display_image)
 
-        display_image = self.current_image.copy()
-        self.drawInstances(display_image)
+        # pix = PyQtImageConverter.cvToQPixmap(display_image)
+        # pix = pix.scaled(self.image.size(), QtCore.Qt.KeepAspectRatio)
+        # self.image.setAlignment(QtCore.Qt.AlignCenter)
+        # self.image.setPixmap(pix)
 
-        pix = PyQtImageConverter.cvToQPixmap(display_image)
-        pix = pix.scaled(self.image.size(), QtCore.Qt.KeepAspectRatio)
-        self.image.setAlignment(QtCore.Qt.AlignCenter)
-        self.image.setPixmap(pix)
-
-        self.label_current_frame.setText(
-            "Current Frame: {}".format(self.current_frame_index + 1))
+        # self.label_current_frame.setText(
+        #     "Current Frame: {}".format(self.current_frame_index + 1))
 
     def getPos(self, event):
         x = event.pos().x()
