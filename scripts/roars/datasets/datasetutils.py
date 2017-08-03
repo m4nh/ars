@@ -260,15 +260,29 @@ class TrainingScene(object):
         return os.path.basename(self.scene_path)
 
     def setClasses(self, classes):
-        self.classes = collections.OrderedDict(
+        temp_classes = collections.OrderedDict(
             sorted(classes.items())
         )
+        self.classes = {}
+        for k, v in temp_classes.iteritems():
+            self.classes[int(k)] = v
+
+    def clearInstances(self):
+        for k, ti in self.classes.iteritems():
+            ti.clearInstances()
+
+    def setInstances(self, instances):
+        self.clearInstances()
+        for inst in instances:
+            self.getTrainingClass(inst.label).addInstances([inst])
+
+    def getTrainingClass(self, label):
+        if label in self.classes:
+            return self.classes[label]
+        return None
 
     def getClassesAsList(self):
-        l = []
-        for k, v in self.classes.iteritems():
-            l.append(k)
-        return l
+        return TrainingClassesMap.transformClassesInStringList(self.classes)
 
     def generateClassesMap(self):
         return TrainingClassesMap(class_list=self.getClassesAsList())
@@ -339,12 +353,16 @@ class TrainingScene(object):
         with open(filename, "w") as outfile:
             outfile.write(scene_js)
 
+    def validateImport(self):
+        self.setClasses(self.classes)
+
     @staticmethod
     def loadFromFile(filename):
         f = open(filename)
         sc = json.loads(f.read(), object_hook=CustomJSONDecoder.decode)
         if not isinstance(sc, TrainingScene):
             return None
+        sc.validateImport()
         return sc
 
     def getTrainingClassByLabel(self, label):
@@ -372,15 +390,21 @@ class TrainingClass(object):
         1: 'blue',
         2: 'teal',
         3: 'lime',
-        4: 'orange',
-        5: 'amber',
-        6: 'indigo'
+        4: 'purple',
+        5: 'green',
+        6: 'cyan'
     }
 
     def __init__(self, label=-1, name=""):
         self.label = label
         self.name = name
         self.instances = []
+
+    def clearInstances(self):
+        self.instances = []
+
+    def addInstances(self, instances):
+        self.instances.extend(instances)
 
     def createTrainingInstance(self, frame=PyKDL.Frame(), size=np.array([0.1, 0.1, 0.1])):
         instance = TrainingInstance(
@@ -409,7 +433,6 @@ class TrainingClass(object):
 
     @staticmethod
     def getColorByLabel(label, output_type="BGR"):
-
         if label not in TrainingClass.CLASSES_COLOR_MAP:
             label = label % len(TrainingClass.CLASSES_COLOR_MAP)
 
@@ -429,34 +452,38 @@ class TrainingClassesMap(object):
 
     def __init__(self, class_list):
 
-        self.class_map = {}
+        class_map = {}
         az_classes = sorted(class_list)
         az_classes.insert(0, TrainingClassesMap.DEFAULT_NOCLASS_NAME)
         for i in range(0, len(az_classes)):
-            self.class_map[i - 1] = az_classes[i]
-        self.class_map = collections.OrderedDict(
-            sorted(self.class_map.items())
+            class_map[i - 1] = az_classes[i]
+        class_map = collections.OrderedDict(
+            sorted(class_map.items())
         )
 
-    def map(self):
-        return self.class_map
+        self.classes = {}
+        for k, name in class_map.iteritems():
+            self.classes[k] = TrainingClass(k, name)
+
+    def getClasses(self):
+        return self.classes
 
     def getClassName(self, class_index):
         if class_index in self.class_map:
-            return self.class_map[class_index]
+            return self.class_map[class_index].name
         else:
             return None
 
     def getClassIndex(self, class_name):
         for k, v in self.class_map.iteritems():
-            if v == class_name:
+            if v.name == class_name:
                 return k
         return None
 
     def getUserFriendlyStringList(self):
         l = []
         for k, v in self.class_map.iteritems():
-            l.append("{} [{}]".format(v, k))
+            l.append("{} [{}]".format(v.name, k))
         return l
 
     def userFriendlyStringToPair(self, ustr):
@@ -464,6 +491,7 @@ class TrainingClassesMap(object):
         k = int(ustr.split(" ")[0])
         v = str(ustr.split(" ")[0])
         return k, v
+
 
 ########################################################################################
 ########################################################################################
@@ -505,6 +533,18 @@ class TrainingInstance(PyKDL.Frame):
             self.setRPY(None, value, None)
         if name == 'yaw':
             self.setRPY(None, None, value)
+
+    def relativeTranslation(self, x, y, z):
+        x = x if x != None else 0.0
+        y = y if y != None else 0.0
+        z = z if z != None else 0.0
+        tv = PyKDL.Frame(PyKDL.Vector(x, y, z))
+        current = PyKDL.Frame()
+        current.M = self.M
+        current.p = self.p
+        current = current * tv
+        self.M = current.M
+        self.p = current.p
 
     def getFrameProperty(self, name):
         if name == 'cx':

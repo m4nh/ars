@@ -55,6 +55,13 @@ class MainWindow(PyQtWindow):
             name = "ui_spin_frame_{}".format(attr)
             getattr(self, name).valueChanged.connect(self.frameValuesChanged)
 
+        self.frame_relative_movements = ["x", "y", "z"]
+        self.frame_relative_movements_dirs = ["plus", "minus"]
+        for coord in self.frame_relative_movements:
+            for dirs in self.frame_relative_movements_dirs:
+                ui_name = "ui_button_frame_rel_{}_{}".format(coord, dirs)
+                getattr(self, ui_name).clicked.connect(self.frameValuesChanged)
+
         #⬢⬢⬢⬢⬢➤ Classes Management
         self.temporary_class_map = None
         self.ui_button_load_classification.clicked.connect(
@@ -87,18 +94,17 @@ class MainWindow(PyQtWindow):
 
         #⬢⬢⬢⬢⬢➤ Check Ready Classes/INstances
         if len(self.scene.classes) > 0:
-            self.temporary_instances = self.scene.getAllInstances()
-            self.refreshInstacesList()
-            self.setClassMap(self.scene.generateClassesMap())
+            # self.temporary_instances = self.scene.getAllInstances()
+            # self.refreshInstacesList()
+            # self.setClassMap(self.scene.generateClassesMap())
+            self.updateClassLists(scene.classes)
+            self.setInstances(scene.getAllInstances())
 
         self.refresh()
 
     def save(self):
-        self.scene.setClasses(
-            TrainingClass.generateClassListFromInstances(
-                self.temporary_instances, classes_map=self.temporary_class_map)
-        )
         if self.showPromptBool(title='Saving Scene', message='Are you sure?'):
+            self.scene.setInstances(self.temporary_instances)
             self.scene.save(self.scene_filename)
 
     def comboBoxChanged(self, index):
@@ -124,22 +130,36 @@ class MainWindow(PyQtWindow):
         inst = self.getSelectedInstance()
         if inst != None:
             obj_name = self.sender().objectName()
-            for attr, conv in self.frame_coordinates_attributes.iteritems():
-                if attr in obj_name:
-                    inst.setFrameProperty(attr, v * conv)
+
+            if 'rel' in obj_name:
+                mag = 0.001
+                direction = 1 if 'plus' in obj_name else -1
+                component = str(obj_name.split('rel_')[1].split('_')[0])
+                dx = direction * mag if 'x' in obj_name else 0
+                dy = direction * mag if 'y' in obj_name else 0
+                dz = direction * mag if 'z' in obj_name else 0
+                inst.relativeTranslation(dx, dy, dz)
+                self.updateInstanceValues(inst)
+            else:
+                for attr, conv in self.frame_coordinates_attributes.iteritems():
+                    if attr in obj_name:
+                        inst.setFrameProperty(attr, v * conv)
 
             self.refresh()
 
-    def setClassMap(self, class_map):
-        self.temporary_class_map = class_map
+    def updateClassLists(self, class_map):
         self.updateListWithClassesMap(
             self.ui_list_classes,
-            self.temporary_class_map
+            class_map
         )
         self.updateListWithClassesMap(
             self.ui_combo_frame_classes,
-            self.temporary_class_map
+            class_map
         )
+
+    def setClassMap(self, class_map):
+        self.scene.setClasses(class_map.getClasses())
+        self.updateClassLists(self.scene.classes)
 
     def loadClassificationCfg(self):
         fname = QFileDialog.getOpenFileName(
@@ -155,18 +175,25 @@ class MainWindow(PyQtWindow):
     def updateListWithClassesMap(self, ui_list, class_map):
         ui_list.clear()
         model = ui_list.model()
-        for k, v in class_map.map().iteritems():
-            print("@", k, v)
-            item = QtGui.QStandardItem(v)
+        labels = sorted(class_map.keys())
+
+        for k in labels:
+            v = class_map[k]
+            print("@", k, v.name)
+            item = QtGui.QStandardItem(v.name)
             color = TrainingClass.getColorByLabel(k)
             item.setForeground(QtGui.QColor(color[2], color[1], color[0]))
             font = item.font()
             font.setPointSize(10)
             item.setFont(font)
             model.appendRow(item)
-            #ui_list.insertItem(ui_list.count(), item)
+            # ui_list.insertItem(ui_list.count(), item)
 
     def loadRawObjects(self):
+        if len(self.scene.classes) <= 0:
+            self.showDialog(text='No Classes Configuration Loaded!')
+            return
+
         fname = QFileDialog.getOpenFileName(
             self,
             'Load Raw Objects List',
@@ -175,15 +202,20 @@ class MainWindow(PyQtWindow):
         )
         obj_data = JSONHelper.loadFromFile(fname)
 
-        self.temporary_instances = obj_data["objects_instances"]
-        self.refreshInstacesList()
+        self.scene.getTrainingClass(-1).addInstances(
+            obj_data["objects_instances"]
+        )
+        self.setInstances(obj_data["objects_instances"])
 
-    def refreshInstacesList(self):
+    def setInstances(self, instances):
+        self.temporary_instances = instances
+        self.refreshInstacesList(self.scene.getAllInstances())
 
+    def refreshInstacesList(self, instances):
         list_model = QStandardItemModel(self.ui_listm_instances)
 
-        for i in range(0, len(self.temporary_instances)):
-            inst = self.temporary_instances[i]
+        for i in range(0, len(instances)):
+            inst = instances[i]
             item = QStandardItem()
             item.setText("Instance_{}".format(i))
             item.setCheckable(False)
@@ -196,25 +228,24 @@ class MainWindow(PyQtWindow):
     def listInstancesSelectionChange(self, current, previous):
         self.selectInstance(current.row())
 
+    def updateInstanceValues(self, instance):
+        #⬢⬢⬢⬢⬢➤ Update gui fields
+        for attr, conv in self.frame_coordinates_attributes.iteritems():
+            name = "ui_spin_frame_{}".format(attr)
+            getattr(self, name).setValue(
+                instance.getFrameProperty(attr) / conv)
+
+        self.ui_combo_frame_classes.setCurrentIndex(instance.label + 1)
+
     def selectInstance(self, index):
         self.selected_instance = index
         if self.selected_instance >= 0:
             inst = self.temporary_instances[index]
             inst_rpy = inst.getRPY()
-
-            #⬢⬢⬢⬢⬢➤ Update gui fields
-            for attr, conv in self.frame_coordinates_attributes.iteritems():
-                name = "ui_spin_frame_{}".format(attr)
-                getattr(self, name).setValue(
-                    inst.getFrameProperty(attr) / conv)
-
-            self.ui_combo_frame_classes.setCurrentIndex(inst.label + 1)
-
-            print(inst_rpy)
+            self.updateInstanceValues(inst)
         self.refresh()
 
     def nextFrame(self):
-
         step = self.ui_spin_frame_step.value()
         self.current_frame_index += step
         self.current_frame_index = self.current_frame_index % len(self.frames)
@@ -234,7 +265,8 @@ class MainWindow(PyQtWindow):
     def drawInstances(self, img):
         for i in range(0, len(self.temporary_instances)):
             inst = self.temporary_instances[i]
-            vo = VirtualObject(frame=inst, size=inst.size, label=inst.label)
+            vo = VirtualObject(frame=inst, size=inst.size,
+                               label=inst.label)
             thick = 1 if self.selected_instance != i else 4
 
             color = TrainingClass.getColorByLabel(
@@ -268,6 +300,9 @@ class MainWindow(PyQtWindow):
 
     def temp(self, v):
         print(self.ui_list_classes.itemText(v))
+
+    def test(self):
+        print("ok")
 
 
 window = MainWindow(
