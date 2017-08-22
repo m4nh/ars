@@ -24,7 +24,7 @@ camera_topic = node.setupParameter(
 )
 camera_file = node.getFileInPackage(
     'roars',
-    'data/camera_calibrations/asus_xtion.yml'
+    'data/camera_calibrations/asus_xtion_short_focus.yml'
 )
 camera = CameraRGB(
     configuration_file=camera_file,
