@@ -7,6 +7,7 @@
 
 //ROS
 #include <ros/ros.h>
+#include <std_msgs/Float64MultiArray.h>
 #include <tf/transform_listener.h>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
@@ -15,8 +16,12 @@
 //OPENCV
 #include <opencv2/highgui/highgui.hpp>
 
+#define MAX_PREDICTIONS 32
+
 //Ros
 ros::NodeHandle *nh;
+ros::Publisher predictions_publisher;
+bool publish_output;
 
 //Darknet
 darknet_wrapper::DarkNet *darknet;
@@ -25,7 +30,7 @@ darknet_wrapper::DarkNet *darknet;
 //// Does prediction on new Image
 ///////////////////////////////////////////////////////////
 
-void manageNewImage(cv::Mat &img)
+darknet_wrapper::DarkNetPredictionOutput manageNewImage(cv::Mat &img)
 {
     darknet_wrapper::DarkNetPredictionOutput prediction_output = darknet->predict(img);
 
@@ -35,6 +40,8 @@ void manageNewImage(cv::Mat &img)
     }
     cv::imshow("output", img);
     cv::waitKey(1);
+
+    return prediction_output;
 }
 
 ///////////////////////////////////////////////////////////
@@ -44,7 +51,26 @@ void manageNewImage(cv::Mat &img)
 void imageCallback(const sensor_msgs::ImageConstPtr &msg)
 {
     cv::Mat img = cv_bridge::toCvShare(msg, "bgr8")->image;
-    manageNewImage(img);
+    darknet_wrapper::DarkNetPredictionOutput prediction_output = manageNewImage(img);
+
+    if (publish_output)
+    {
+        int predictions_number = int(prediction_output.predictions.size());
+
+        std_msgs::Float64MultiArray prediction_msg;
+        prediction_msg.data.resize(1 + MAX_PREDICTIONS * 5);
+        prediction_msg.data[0] = predictions_number;
+        for (int i = 0; i < predictions_number; i++)
+        {
+            prediction_msg.data[1 + i * 5] = prediction_output.predictions[i].prediction_box.x;
+            prediction_msg.data[1 + i * 5 + 1] = prediction_output.predictions[i].prediction_box.y;
+            prediction_msg.data[1 + i * 5 + 2] = prediction_output.predictions[i].prediction_box.w;
+            prediction_msg.data[1 + i * 5 + 3] = prediction_output.predictions[i].prediction_box.h;
+            prediction_msg.data[1 + i * 5 + 4] = prediction_output.predictions[i].prediction_class;
+        }
+
+        predictions_publisher.publish(prediction_msg);
+    }
 }
 
 ///////////////////////////////////////////////////////////
@@ -69,6 +95,11 @@ int main(int argc, char *argv[])
     //Darknet Wrapper Configuration
     std::string darkent_configuration = nh->param<std::string>("darknet_configuration", "");
     darknet = new darknet_wrapper::DarkNet(darkent_configuration);
+
+    //Output Configuration
+    std::string output_topic_name = nh->param<std::string>("output_topic_name", "predictions");
+    publish_output = nh->param<bool>("publish_output", true);
+    predictions_publisher = nh->advertise<std_msgs::Float64MultiArray>(output_topic_name, 1);
 
     while (ros::ok())
     {
