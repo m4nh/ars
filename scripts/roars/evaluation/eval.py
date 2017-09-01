@@ -48,7 +48,7 @@ def visualize(image_file, p_box,correct):
     immy_copy = immy.copy()
     correct_detection = [box for cc, box in zip(correct, p_box) if cc]
     mistakes = [box for cc, box in zip(correct, p_box) if cc==False]
-    immy_correct = cv_show_detection.draw_prediction(immy, correct_detection,min_score_th=0.01)
+    immy_correct = cv_show_detection.draw_prediction(immy, correct_detection,min_score_th=0.5)
     immy_mistake = cv_show_detection.draw_prediction(immy_copy, mistakes,min_score_th=0)
 
     print('Showing correct and wrong detections for {}, press a key to continue'.format(image_file))
@@ -89,7 +89,9 @@ if __name__=='__main__':
         gt_boxes = read_predictions(l)
         p_boxes = read_predictions(p)
         
-        p_boxes.sort(key=lambda x:x.confidence)
+        p_boxes.sort(key=lambda x:x.confidence,reverse=True)
+
+
         correct = [False]*len(p_boxes)
         gt_map = [{'index':None,'intersection':0,'max_conf':0} for _ in range(len(gt_boxes))]
         total_gt+=len(gt_boxes)
@@ -132,9 +134,12 @@ if __name__=='__main__':
     #compute final values
     format_string='{};{};{};{};{}\n'
     to_write = ['IOU_TH;TP;Predictions;Precision;Recall\n']
+    last_point=None
     for c,vals in zip(CONFIDENCE_TH,scores):
-        to_write.append(format_string.format(c,vals['TP'],vals['Predicted'],float(vals['TP']/vals['Predicted']),float(vals['Detected']/total_gt)))
-    
+        precision=float(vals['TP'])/float(vals['Predicted'])
+        recall = float(vals['Detected'])/total_gt
+        to_write.append(format_string.format(c,vals['TP'],vals['Predicted'],precision,recall))
+        
     print('Final Result: ')
     for l in to_write:
         print(l.replace(';','\t'))
