@@ -75,7 +75,7 @@ if(USE_DARKNET)
   ## DARKNET
   #############################################
   set(DARKNET_FOLDER $ENV{DARKNET_PATH})
-  MESSAGE(${DARKNET_FOLDER})
+  MESSAGE(${DARKNET_FOLDER}) #DEBUG: export DARKNET_PATH=/home/daniele/work/workspace_cpp/darknet-cpp
   include_directories(
     ${DARKNET_FOLDER}/include
     ${DARKNET_FOLDER}/src
@@ -241,6 +241,10 @@ if(USE_DARKNET)
   ## DARKNET RGB_SCAN DETECTOR 
   add_executable(darknet_rgb_detector src/nodes/darknet_rgb_detector.cpp)
   target_link_libraries(darknet_rgb_detector darknet ${OpenCV_LIBRARIES} ${catkin_LIBRARIES})
+
+  ## DARKNET BATCH DETECTOR
+  add_executable(darknet_batch_detector src/nodes/darknet_batch_detector.cpp)
+  target_link_libraries(darknet_batch_detector darknet ${OpenCV_LIBRARIES} ${catkin_LIBRARIES})
 endif()
 
 

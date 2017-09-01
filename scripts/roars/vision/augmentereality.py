@@ -236,16 +236,18 @@ class VirtualObject(PyKDL.Frame):
             pass
 
     @staticmethod
-    def drawFrame(frame_data, output, color=np.array([255, 0, 255]), thickness=2, camera=None):
-        if camera == None:
-            return
+    def drawFrame(frame_data, output, color=np.array([255, 0, 255]), thickness=2):
+
+        width = output.shape[1]
+        height = output.shape[0]
+
         try:
-            x = int(frame_data[0] * camera.width -
-                    frame_data[2] * camera.width * 0.5)
-            y = int(frame_data[1] * camera.height -
-                    frame_data[3] * camera.height * 0.5)
-            w = int(frame_data[2] * camera.width)
-            h = int(frame_data[3] * camera.height)
+            x = int(frame_data[0] * width -
+                    frame_data[2] * width * 0.5)
+            y = int(frame_data[1] * height -
+                    frame_data[3] * height * 0.5)
+            w = int(frame_data[2] * width)
+            h = int(frame_data[3] * height)
 
             cv2.line(output, (x, y), (x + w, y), color, thickness)
             cv2.line(output, (x + w, y), (x + w, y + h), color, thickness)

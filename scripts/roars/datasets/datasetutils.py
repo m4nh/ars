@@ -5,6 +5,7 @@ import PyKDL
 import numpy as np
 import json
 import os
+import glob
 import random
 import shutil
 import roars.geometry.transformations as transformations
@@ -255,6 +256,15 @@ class TrainingScene(object):
                 )
             )
         return
+
+    def getScenePath(self, only_base=True):
+        if only_base:
+            path = self.scene_path
+            if path.endswith("/"):
+                path = path[:-1]
+            return os.path.basename(path)
+        else:
+            return self.scene_path
 
     def getName(self):
         return os.path.basename(self.scene_path)
@@ -611,6 +621,15 @@ class TrainingFrame(object):
         self.image_path = self.scene.getImagePath(self.internal_index)
         self.camera_pose = self.scene.getCameraPose(self.internal_index)
 
+    def getId(self):
+        return self.getScene().getScenePath(only_base=True) + "!" + self.getImageName()
+
+    def getScene(self):
+        return self.scene
+
+    def getImageName(self):
+        return os.path.basename(self.getImagePath())
+
     def getImagePath(self):
         return self.image_path
 
@@ -619,6 +638,19 @@ class TrainingFrame(object):
 
     def getCameraParams(self):
         return self.scene.camera_params
+
+    def getInstancesBoxes(self):
+        instances = self.scene.getAllInstances()
+        boxes = []
+        for inst in instances:
+            vobj = VirtualObject(frame=inst, size=inst.size, label=inst.label)
+            img_pts = vobj.getImagePoints(
+                camera_frame=self.getCameraPose(),
+                camera=self.getCameraParams()
+            )
+            boxes.append(img_pts)
+
+        return boxes
 
     def getInstancesGT(self):
         instances = self.scene.getAllInstances()
@@ -641,6 +673,12 @@ class TrainingFrame(object):
                 gts.append(img_frame)
 
         return gts
+
+    @staticmethod
+    def drawGT(output, gt_data):
+        frame_data = gt_data[1:5]
+        print(frame_data)
+        VirtualObject.drawFrame(frame_data, output)
 
     def __str__(self):
         return "TrainingFrame[{},{}]".format(self.scene.getName(), self.internal_index)
@@ -722,6 +760,54 @@ class DatasetBuilder(object):
         print("Build not implemented for '{}'".format(type(self)))
 
 
+class RawDatasetBuilder(DatasetBuilder):
+    ZERO_PADDING_SIZE = 5
+
+    def __init__(self, training_dataset, dest_folder):
+        super(RawDatasetBuilder, self).__init__(training_dataset, dest_folder)
+
+    def build(self, options={}):
+
+        if os.path.exists(self.dest_folder) or len(self.dest_folder) == 0:
+            return False
+
+        os.mkdir(self.dest_folder)
+
+        img_folder = os.path.join(self.dest_folder, "images")
+        label_folder = os.path.join(self.dest_folder, "labels")
+        ids_folder = os.path.join(self.dest_folder, "ids")
+
+        os.mkdir(img_folder)
+        os.mkdir(label_folder)
+        os.mkdir(ids_folder)
+
+        frames = self.training_dataset.getAllFrames()
+
+        counter = 0
+        for frame in frames:
+
+            counter_string = '{}'.format(str(counter).zfill(
+                RawDatasetBuilder.ZERO_PADDING_SIZE))
+
+            img_file = os.path.join(img_folder, counter_string + ".jpg")
+            label_file = os.path.join(label_folder, counter_string + ".txt")
+            id_file = os.path.join(ids_folder, counter_string + ".txt")
+
+            shutil.copyfile(frame.getImagePath(), img_file)
+
+            gts = np.array(frame.getInstancesGT())
+            np.savetxt(label_file, gts, fmt='%d %1.4f %1.4f %1.4f %1.4f')
+
+            f = open(id_file, 'w')
+            f.write(frame.getId())
+            f.close()
+
+            print frame.getId()
+            counter = counter + 1
+
+        return True
+
+
 class YoloDatasetBuilder(DatasetBuilder):
 
     def __init__(self, training_dataset, dest_folder):
@@ -797,3 +883,56 @@ class YoloDatasetBuilder(DatasetBuilder):
         train_file.close()
         test_file.close()
         val_file.close()
+
+
+########################################################################################
+########################################################################################
+########################################################################################
+########################################################################################
+########################################################################################
+########################################################################################
+
+class RawDataset(object):
+
+    def __init__(self, folder, create=False):
+
+        self.folder = folder
+        self.img_folder = os.path.join(folder, "images")
+        self.label_folder = os.path.join(folder, "labels")
+        self.ids_folder = os.path.join(folder, "ids")
+
+        if create:
+            if os.path.exists(self.folder) or len(self.folder) == 0:
+                print("Folder '{}' already exists!".format(self.folder))
+            else:
+                os.mkdir(self.folder)
+                os.mkdir(self.img_folder)
+                os.mkdir(self.label_folder)
+                os.mkdir(self.ids_folder)
+
+        else:
+            image_files = sorted(glob.glob(self.img_folder + "/*.jpg"))
+            label_files = sorted(glob.glob(self.label_folder + "/*.txt"))
+            id_files = sorted(glob.glob(self.ids_folder + "/*.txt"))
+
+            self.ids = []
+            self.data_map = {}
+            self.data_list = []
+            for index in range(0, len(image_files)):
+                id_file = id_files[index]
+                image = image_files[index]
+                label = label_files[index]
+
+                f = open(id_file, 'r')
+                id = f.readline().replace('\n', '')
+                self.ids.append(id)
+                self.data_map[id] = {
+                    'id': id_file,
+                    'image': image,
+                    'label': label
+                }
+                self.data_list.append(self.data_map[id])
+                f.close()
+
+    def getImageById(self, id):
+        return self.image_maps[id]

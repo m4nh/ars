@@ -11,6 +11,7 @@
 
 #include <string>
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -152,6 +153,17 @@ class DarkNetPrediction
         cv::rectangle(img, cv::Point(left, top - 30), cv::Point(right, top), color, -1);
         cv::putText(img, this->name, cv::Point(left, top), cv::FONT_HERSHEY_COMPLEX, 0.75, cv::Scalar(255, 255, 255), 2);
     }
+
+    friend std::ostream &operator<<(std::ostream &os, const DarkNetPrediction &p)
+    {
+        os << p.prediction_class << " ";
+        os << p.prediction_box.x << " ";
+        os << p.prediction_box.y << " ";
+        os << p.prediction_box.w << " ";
+        os << p.prediction_box.h << " ";
+        os << p.prediction_prob;
+        return os;
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -163,6 +175,19 @@ class DarkNetPredictionOutput
 {
   public:
     std::vector<DarkNetPrediction> predictions;
+
+    friend std::ostream &operator<<(std::ostream &os, const DarkNetPredictionOutput &p)
+    {
+        for (int i = 0; i < p.predictions.size(); i++)
+        {
+            os << p.predictions[i];
+            if (i < p.predictions.size() - 1)
+            {
+                os << "\n";
+            }
+        }
+        return os;
+    }
 };
 }
 
