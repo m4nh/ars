@@ -39,7 +39,7 @@ def draw_prediction(image,predicitons,color_map={},min_score_th=0.5,line_thickne
                 color_map[class_id]=random_color()
             
             current_class = p.getClassName()
-            ymin, xmin, ymax, xmax = p.box
+            ymin, xmin, ymax, xmax = p.box()
             ymin = int(ymin*image.shape[0])
             ymax = int(ymax*image.shape[0])
             xmin = int(xmin*image.shape[1])

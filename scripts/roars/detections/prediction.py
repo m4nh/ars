@@ -14,17 +14,20 @@ class prediction(object):
             confidence: confidence associated with the prediction
             class_name: optional human readable name of the detected class
         """
-        assert len(coordinates)==4 
-        self.box = coordinates
+        assert len(coordinates)==4
+        self.ymin = coordinates[0]
+        self.xmin = coordinates[1]
+        self.ymax = coordinates[2]
+        self.xmax = coordinates[3]
         self.classId=int(class_id)
         self.confidence = confidence
         self.className=class_name
     
     def __str__(self):
         if self.className is None:
-            return "Class: {}, confidence: {:.2f}, coordinates: {}".format(self.classId, self.confidence, self.box)
+            return "Class: {}, confidence: {:.2f}, coordinates: {}".format(self.classId, self.confidence, self.box())
         else:
-            return "Class: {}-{}, confidence: {:.2f}, coordinates: {}".format(self.classId, self.className, self.confidence, self.box)
+            return "Class: {}-{}, confidence: {:.2f}, coordinates: {}".format(self.classId, self.className, self.confidence, self.box())
     
     def __repr__(self):
         return self.__str__()
@@ -35,19 +38,51 @@ class prediction(object):
         else:
             return self.className
     
+    def box(self,center=False):
+        """
+        Get coordinates of the bounding box as a 4 float array either with [ymin,xmin,ymax,xmax] or if center=True [x_center,y_center,w,h]
+        """
+        if not center:
+            return [self.ymin,self.xmin,self.ymax,self.xmax]
+        else:
+            return [(self.xmax-self.xmin)/2,(self.ymax-self.ymin)/2,self.xmax-self.xmin,self.ymax-self.ymin]
+
+    def getArea(self):
+        w=self.xmax-self.xmin
+        h=self.ymax-self.ymin
+        return w*h
+
+    def intersectionArea(self,other):
+        i_xmin = max(self.xmin,other.xmin)
+        i_xmax = min(self.xmax,other.xmax)
+        i_ymin = max(self.ymin,other.ymin)
+        i_ymax = min(self.ymax,other.ymax)
+        i_w = i_xmax-i_xmin
+        i_h = i_ymax-i_ymin
+        return i_w*i_h
+    
     def toArray(self):
         """
-        Encode the detction in 6 floats
+        Encode the detection in 6 floats
         """
-        return [self.classId,self.confidence,self.box[0],self.box[1],self.box[2],self.box[3]]
+        return [self.classId,self.ymin,self.xmin,self.ymax,self.xmax,self.confidence]
 
     @classmethod
-    def fromArray(cls,array):
+    def fromArray(cls,array,centers=False):
         """
-        Construct a prediction from an array of six floats
+        Construct a prediction from an array of six floats.
+        The six floats encode [class_id, ymin, xmin, ymax, xmax, confidence] if centers=False, else [class_id, x_center, y_center, width, height, confidence]
         """
         assert(len(array)==6)
-        return cls(array[2:],array[0],array[1])
+        if not centers:
+            return cls(array[1:5],array[0],array[-1])
+        else:
+            x_c,y_c,w,h=array[1:5]
+            xmin=x_c-(w/2)
+            xmax=x_c+(w/2)
+            ymin=y_c-(h/2)
+            ymax=y_c+(h/2)
+            return cls([ymin,xmin,ymax,xmax],array[0],array[-1])
 
     @classmethod
     def fromMatrix(cls,matrix):
@@ -56,7 +91,7 @@ class prediction(object):
         """
         result=[]
         for i in range(matrix.shape(0)):
-            result.append(cls.fromArray(matrxi[i]))
+            result.append(cls.fromArray(matrix[i]))
         return result
 
     @staticmethod
