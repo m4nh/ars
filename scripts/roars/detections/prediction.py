@@ -52,15 +52,21 @@ class prediction(object):
         h=self.ymax-self.ymin
         return w*h
 
+    def intersect(self,other):
+        return (self.xmin <= other.xmax and self.xmax >= other.xmin and self.ymin <= other.ymax and self.ymax >= other.ymin)
+
     def intersectionArea(self,other):
-        i_xmin = max(self.xmin,other.xmin)
-        i_xmax = min(self.xmax,other.xmax)
-        i_ymin = max(self.ymin,other.ymin)
-        i_ymax = min(self.ymax,other.ymax)
-        i_w = i_xmax-i_xmin
-        i_h = i_ymax-i_ymin
-        return i_w*i_h
-    
+        if not self.intersect(other):
+            return 0
+        else:
+            i_xmin = max(self.xmin,other.xmin)
+            i_xmax = min(self.xmax,other.xmax)
+            i_ymin = max(self.ymin,other.ymin)
+            i_ymax = min(self.ymax,other.ymax)
+            i_w = i_xmax-i_xmin
+            i_h = i_ymax-i_ymin
+            return i_w*i_h
+
     def toArray(self):
         """
         Encode the detection in 6 floats
