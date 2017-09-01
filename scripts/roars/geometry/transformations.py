@@ -104,12 +104,19 @@ def cvToKDL(Rvec, Tvec):
     return frame
 
 
-def KDLtoNumpyVector(frame):
-    p = frame.p
-    q = frame.M.GetQuaternion()
-    return numpy.array([
-        p.x(), p.y(), p.z(), q[0], q[1], q[2], q[3]
-    ]).reshape(1, 7)
+def KDLtoNumpyVector(frame, fmt='XYZQ'):
+    if fmt == 'XYZQ':
+        p = frame.p
+        q = frame.M.GetQuaternion()
+        return numpy.array([
+            p.x(), p.y(), p.z(), q[0], q[1], q[2], q[3]
+        ]).reshape(1, 7)
+    elif fmt == 'RPY':
+        p = frame.p
+        roll, pitch, yaw = frame.M.GetRPY()
+        return numpy.array([
+            p.x(), p.y(), p.z(), roll, pitch, yaw
+        ]).reshape(1, 6)
 
 
 def KLDtoNumpyMatrix(frame):
