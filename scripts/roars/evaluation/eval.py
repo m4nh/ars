@@ -7,6 +7,7 @@ from roars.detections import prediction
 from roars.gui import cv_show_detection
 
 CONFIDENCE_TH=[0.001+0.05*i for i in range(20)]
+
 def check_existance(f):
     if not os.path.exists(f):
         print('ERROR: Unable to find folder: {}'.format(f))
@@ -44,15 +45,23 @@ def visualize(image_file, p_box,correct):
         return
 
     immy = cv2.imread(image_file)
+    immy_copy = immy.copy()
     correct_detection = [box for cc, box in zip(correct, p_box) if cc]
-    mistakes = [box for cc, box in zip(correct, p_box) if not cc]
-    immy_correct = cv_show_detection.draw_prediction(immy, correct_detection)
-    immy_mistake = cv_show_detection.draw_prediction(immy, mistakes)
+    mistakes = [box for cc, box in zip(correct, p_box) if cc==False]
+    immy_correct = cv_show_detection.draw_prediction(immy, correct_detection,min_score_th=0.01)
+    immy_mistake = cv_show_detection.draw_prediction(immy_copy, mistakes,min_score_th=0)
 
     print('Showing correct and wrong detections for {}, press a key to continue'.format(image_file))
     cv2.imshow('correct', immy_correct)
     cv2.imshow('mistake', immy_mistake)
     cv2.waitKey()
+
+def get_detected_for_th(gt_map,th):
+    detected=0
+    for g in gt_map:
+        if g['max_conf']>th:
+            detected+=1
+    return detected
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description="Evaluation of an object detection system, loads predicted bounding box and ground truth ones and compute precision and recall at different confidence threshold. The result will be saved in a csv file for further elaboration")
@@ -74,37 +83,38 @@ if __name__=='__main__':
     assert(len(labels)==len(predicted))
     print('Found {} image to test'.format(len(labels)))
 
-    scores = [{'TP':0,'Predicted':0}]*len(CONFIDENCE_TH)
+    scores = [{'TP':0,'Predicted':0,'Detected':0} for _ in range(len(CONFIDENCE_TH))]
     total_gt = 0
     for l,p in zip(labels,predicted):
         gt_boxes = read_predictions(l)
         p_boxes = read_predictions(p)
+        
         p_boxes.sort(key=lambda x:x.confidence)
         correct = [False]*len(p_boxes)
-        mapped = [{'index':None,'intersection':0}]*len(gt_boxes)
+        gt_map = [{'index':None,'intersection':0,'max_conf':0} for _ in range(len(gt_boxes))]
         total_gt+=len(gt_boxes)
         for index,pb in enumerate(p_boxes):
             #get the ground truth box associated with this prediction
             gt_indx,intersection = associate(pb,gt_boxes)
             gt_box = gt_boxes[gt_indx]
 
-            #if single map and already detcted another box with bigger intersection then myself
-            if args.single_map and mapped[gt_indx]['intersection'] > intersection:
+            #if single map and already detcted another box with bigger intersection then myself skip
+            if args.single_map and gt_map[gt_indx]['intersection'] > intersection:
                 continue
             
             #compute iou and check against threshold
-            iou = intersection/(pb.getArea()+gt_box.getArea())
+            iou = intersection/(pb.getArea()+gt_box.getArea()-intersection)
             if iou > args.iou_th and pb.classId==gt_box.classId:
                 #correct detection
                 correct[index]=True
 
-                #if single map and gt_indx is already mapped to another box fix correct array
-                if args.single_map and mapped[gt_indx]['index'] is not None:
-                    correct[mapped[gt_indx]['index']]=False
-                mapped[gt_indx]['index']=index
-                mapped[gt_indx]['intersection']=intersection
+                #if single map and gt_indx is already gt_map to another box fix correct array
+                if args.single_map and gt_map[gt_indx]['index'] is not None:
+                    correct[gt_map[gt_indx]['index']]=False
+                gt_map[gt_indx]['index']=index
+                gt_map[gt_indx]['intersection']=intersection
+                gt_map[gt_indx]['max_conf']=pb.confidence
 
-        print(correct)
         if args.visualization:
             image_file = os.path.join(args.image,os.path.basename(l))
             visualize(image_file,p_boxes,correct)
@@ -113,16 +123,17 @@ if __name__=='__main__':
         for i,c in enumerate(CONFIDENCE_TH):
             id_cut=0
             for idx,p in enumerate(p_boxes):
-                if p.confidence<c:
+                if c<p.confidence:
                     id_cut=idx
             scores[i]['TP']+=np.sum(correct[:id_cut])
             scores[i]['Predicted']+=id_cut
+            scores[i]['Detected']+=get_detected_for_th(gt_map,c)
         
     #compute final values
     format_string='{};{};{};{};{}\n'
     to_write = ['IOU_TH;TP;Predictions;Precision;Recall\n']
     for c,vals in zip(CONFIDENCE_TH,scores):
-        to_write.append(format_string.format(c,vlas['TP'],vals['Predicted'],vals['TP']/vals['Predicted'],vals['TP']/total_gt))
+        to_write.append(format_string.format(c,vals['TP'],vals['Predicted'],float(vals['TP']/vals['Predicted']),float(vals['Detected']/total_gt)))
     
     print('Final Result: ')
     for l in to_write:
