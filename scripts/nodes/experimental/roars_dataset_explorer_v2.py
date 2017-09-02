@@ -8,6 +8,7 @@ from roars.gui.pyqtutils import PyQtWindow, PyQtImageConverter, PyQtWidget
 from roars.gui.widgets.WBaseWidget import WBaseWidget
 from roars.gui.widgets.WSceneFrameVisualizer import WSceneFrameVisualizer
 from roars.vision.augmentereality import VirtualObject
+import roars.geometry.lines as lines
 from PyQt4 import QtCore
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -18,9 +19,11 @@ import sys
 import cv2
 import numpy as np
 import functools
+import sys
+
 
 #⬢⬢⬢⬢⬢➤ NODE
-node = RosNode("roars_dataset_explorer")
+node = RosNode("roars_dataset_explorer_v2")
 
 scene_manifest_file = node.setupParameter("scene_manifest_file", '')
 
@@ -50,6 +53,11 @@ class MainWindow(PyQtWindow):
         self.ui_view_single_container.addWidget(
             self.ui_scene_visualizers_list[0]
         )
+        for fv in self.ui_scene_visualizers_list:
+            fv.mousePressCallback = self.frameClickedPointCallback
+
+        self.scene_visualizers_points = []
+
         self.ui_view_container_1.addWidget(self.ui_scene_visualizers_list[1])
         self.ui_view_container_2.addWidget(self.ui_scene_visualizers_list[2])
         self.ui_view_container_3.addWidget(self.ui_scene_visualizers_list[3])
@@ -339,6 +347,31 @@ class MainWindow(PyQtWindow):
     def test(self):
         print("ok")
 
+    def frameClickedPointCallback(self, frame, point, action):
+        if action == 'ADD':
+            ray3D = lines.compute3DRay(
+                point, self.scene.camera_params.camera_matrix_inv, frame.getCameraPose())
+
+            z = np.array([
+                frame.getCameraPose().M.UnitZ().x(),
+                frame.getCameraPose().M.UnitZ().y(),
+                frame.getCameraPose().M.UnitZ().z()
+            ])
+            p = np.array([
+                frame.getCameraPose().p.x(),
+                frame.getCameraPose().p.y(),
+                frame.getCameraPose().p.z()
+            ])
+            print ray3D
+            print "###"
+            print p, z
+            self.scene_visualizers_points.append(ray3D)
+            rays_size = len(self.scene_visualizers_points)
+            print("Rays", rays_size)
+            if rays_size >= 4:
+                x = lines.lineLineIntersection(self.scene_visualizers_points)
+                print x
+
 
 gui_file = node.getFileInPackage(
     'roars', 'data/gui_forms/arp_gui.ui'
@@ -348,15 +381,3 @@ window = MainWindow(
 )
 window.initScene(scene_filename=scene_manifest_file)
 window.run()
-
-
-while node.isActive():
-
-    frame = frames[current_frame]
-
-    img = cv2.imread(frame.image_path)
-
-    PyQtImageConverter.cvToQt(img)
-    cv2.imshow("prova", img)
-    c = cv2.waitKey(1)
-    print(c)

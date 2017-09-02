@@ -27,6 +27,43 @@ class WSceneFrameVisualizer(WBaseWidget):
         self.ui_button_next_frame.clicked.connect(self.nextFrame)
         self.ui_button_prev_frame.clicked.connect(self.prevFrame)
 
+        self.ui_image.mousePressEvent = self.mousePressEvent
+        self.mousePressCallback = None
+        self.enable_click_feedback = True
+
+    def mousePressEvent(self, evt):
+        print 'click', evt.button(), evt.x(), evt.y()
+        pos = self.imageCoordinatesFromFrameCoordinates(evt.x(), evt.y())
+        if self.enable_click_feedback:
+            if evt.button() == 1:
+                cv2.circle(self.current_image, pos, 5, (0, 255, 255), -1)
+                self.refresh()
+                if self.mousePressCallback != None:
+                    self.mousePressCallback(
+                        self.current_frame, pos, action='ADD')
+
+    def imageCoordinatesFromFrameCoordinates(self, x, y, tp=int):
+        img_size = self.current_image.shape
+        img_w = float(img_size[1])
+        img_h = float(img_size[0])
+
+        frame_w = float(self.ui_image.size().width())
+        frame_h = float(self.ui_image.size().height())
+
+        h_ratio = frame_h / img_h
+        img_reduced_w = img_w * h_ratio
+        img_reduced_h = frame_h
+        w_padding = (frame_w - img_reduced_w) * 0.5
+
+        inner_x = (x - w_padding) / img_reduced_w
+        inner_y = (y) / img_reduced_h
+        img_x = inner_x * img_w
+        img_y = inner_y * img_h
+
+        print img_size, (frame_w, frame_h), h_ratio, img_reduced_w, w_padding
+        print img_x, img_y
+        return (tp(img_x), tp(img_y))
+
     def setSelectedInstance(self, instance):
         self.selected_instance = instance
 
