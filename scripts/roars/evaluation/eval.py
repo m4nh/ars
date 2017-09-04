@@ -5,8 +5,9 @@ import glob
 import numpy as np
 from roars.detections import prediction
 from roars.gui import cv_show_detection
+from matplotlib import pyplot as plt
 
-CONFIDENCE_TH=[0.001+0.05*i for i in range(20)]
+CONFIDENCE_TH=[1.0-0.05*i for i in range(1,21)]
 
 def check_existance(f):
     if not os.path.exists(f):
@@ -34,7 +35,7 @@ def associate(predicted_box,gt_boxes):
     gt_indx = np.argmax(intersections)
     return gt_indx, intersections[gt_indx]
 
-def visualize(image_file, p_box,correct):
+def visualize(image_file, p_box,correct,gt_boxes):
     #brutto assai...
     if os.path.exists(image_file.replace('.txt','.png')):
         image_file = image_file.replace('.txt', '.png')
@@ -46,14 +47,23 @@ def visualize(image_file, p_box,correct):
 
     immy = cv2.imread(image_file)
     immy_copy = immy.copy()
+    immy_copy_2 = immy.copy()
     correct_detection = [box for cc, box in zip(correct, p_box) if cc]
     mistakes = [box for cc, box in zip(correct, p_box) if cc==False]
-    immy_correct = cv_show_detection.draw_prediction(immy, correct_detection,min_score_th=0.5)
-    immy_mistake = cv_show_detection.draw_prediction(immy_copy, mistakes,min_score_th=0)
+    #create label_dictionary
+    classes = []
+    for gt in gt_boxes:
+        if gt.classId not in classes:
+            classes.append(gt.classId)
+    cmap=cv_show_detection.getColorMap(classes)
+    immy_correct = cv_show_detection.draw_prediction(immy, correct_detection,color_map=cmap,min_score_th=0.95)
+    immy_mistake = cv_show_detection.draw_prediction(immy_copy, mistakes,color_map=cmap,min_score_th=0.95)
+    immy_gt = cv_show_detection.draw_prediction(immy_copy_2,gt_boxes,color_map=cmap,min_score_th=0)
 
     print('Showing correct and wrong detections for {}, press a key to continue'.format(image_file))
     cv2.imshow('correct', immy_correct)
     cv2.imshow('mistake', immy_mistake)
+    cv2.imshow('Ground Truth',immy_gt)
     cv2.waitKey()
 
 def get_detected_for_th(gt_map,th):
@@ -63,18 +73,43 @@ def get_detected_for_th(gt_map,th):
             detected+=1
     return detected
 
+def plot(precisions,recalls,output_path=None,show=False):
+    #add fake point for 0 recall
+    precisions = [precisions[0]]+precisions
+    recalls = [0]+recalls
+
+    plt.figure()
+    plt.title('Precision-Recall')
+    plt.plot(recalls,precisions,'-o')
+    axes = plt.gca()
+    
+    axes.set_xlim([0,1])
+    axes.set_xticks(np.arange(0,1.0,0.1))
+    axes.set_xlabel('Recall')
+
+    axes.set_ylim([0,1])
+    axes.set_yticks(np.arange(0,1.0,0.1))
+    axes.set_ylabel('Precision')
+
+    #save plot to file
+    if output_path is not None:
+        plt.savefig(output_path)
+    
+    if show:
+        plt.show()
+
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description="Evaluation of an object detection system, loads predicted bounding box and ground truth ones and compute precision and recall at different confidence threshold. The result will be saved in a csv file for further elaboration")
     parser.add_argument('-p','--predicted',help="folder containing the predicted boudning boxes",required=True)
     parser.add_argument('-l','--label',help="folder containing the ground truth bounding box",required=True)
-    parser.add_argument('-o','--output',help="the result will be saved in this file in semicolon seprated format",required=True)
+    parser.add_argument('-o','--output',help="Folder were the result will be saved",required=True)
     parser.add_argument('-i','--image',help="folder containing the image associated with the predicted bounding boxes, used only for visualization",default=None)
-    parser.add_argument('-v','--visualization',help="flag to enable visualization",action='store_true')
+    parser.add_argument('-v','--verbosity',help="verbosity level, 0-> minimal output, 1-> show precision recall curve, >1-> show result on every single image",default=0,type=int)
     parser.add_argument('--single_map', help="map gt box to one and only one detection",action='store_true')
     parser.add_argument('--iou_th',help="intersection over union thrshold for a good detction",default=0.5,type=float)
     args = parser.parse_args()
 
-    to_check = [args.predicted,args.label,args.image] if args.visualization else [args.predicted,args.label]
+    to_check = [args.predicted,args.label,args.image] if args.verbosity>1 else [args.predicted,args.label]
     for f in to_check:
         check_existance(f)
     
@@ -87,8 +122,7 @@ if __name__=='__main__':
     total_gt = 0
     for l,p in zip(labels,predicted):
         gt_boxes = read_predictions(l)
-        p_boxes = read_predictions(p)
-        
+        p_boxes = read_predictions(p)      
         p_boxes.sort(key=lambda x:x.confidence,reverse=True)
 
 
@@ -117,34 +151,53 @@ if __name__=='__main__':
                 gt_map[gt_indx]['intersection']=intersection
                 gt_map[gt_indx]['max_conf']=pb.confidence
 
-        if args.visualization:
+        if args.verbosity>1:
             image_file = os.path.join(args.image,os.path.basename(l))
-            visualize(image_file,p_boxes,correct)
+            visualize(image_file,p_boxes,correct,gt_boxes)
 
         #all prediction checked, now we need to create the precision recall curve at different confidence threshold
         for i,c in enumerate(CONFIDENCE_TH):
-            id_cut=0
+            id_cut=len(p_boxes)
             for idx,p in enumerate(p_boxes):
-                if c<p.confidence:
+                if c>p.confidence:
                     id_cut=idx
+                    break
             scores[i]['TP']+=np.sum(correct[:id_cut])
             scores[i]['Predicted']+=id_cut
             scores[i]['Detected']+=get_detected_for_th(gt_map,c)
         
     #compute final values
-    format_string='{};{};{};{};{}\n'
-    to_write = ['IOU_TH;TP;Predictions;Precision;Recall\n']
-    last_point=None
+    format_string='{};{};{};{};{};{}\n'
+    to_write = ['CONF_TH;TP;Predictions;Precision;Recall;F-Score\n']
+    average_precision = 0
+    last_recall = 0
+    precisions=[]
+    recals=[]
     for c,vals in zip(CONFIDENCE_TH,scores):
         precision=float(vals['TP'])/float(vals['Predicted'])
+        precisions.append(precision)
         recall = float(vals['Detected'])/total_gt
-        to_write.append(format_string.format(c,vals['TP'],vals['Predicted'],precision,recall))
+        recals.append(recall)
+        f_score = 2*((precision*recall)/(precision+recall))
+        to_write.append(format_string.format(c,vals['TP'],vals['Predicted'],precision,recall,f_score))
+
+        average_precision+=(recall-last_recall)*precision
+        last_recall=recall
         
     print('Final Result: ')
     for l in to_write:
         print(l.replace(';','\t'))
+    print('Average Precision: {}'.format(average_precision))
 
-    with open(args.output,'w+') as f_out:
-        f_out.writelines(to_write)
+    #check if output folder exist
+    if not os.path.exists(args.output):
+        os.makedirs(args.output)
     
+
+    with open(os.path.join(args.output,'result.txt'),'w+') as f_out:
+        f_out.writelines(to_write)
+        f_out.write('\n\n Average Precision:;{}\n'.format(average_precision))
+    
+    plot(precisions,recals,show=args.verbosity>0,output_path=os.path.join(args.output,'precision_recall.png'))
+
     print('All Done')

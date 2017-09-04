@@ -1,6 +1,8 @@
 import cv2
 from roars.detections import prediction
-from random import randint
+from random import randint,seed
+
+seed()
 
 def random_color():
     return (randint(0,255),randint(0,255),randint(0,255))
