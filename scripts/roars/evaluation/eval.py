@@ -174,11 +174,11 @@ if __name__=='__main__':
     precisions=[]
     recals=[]
     for c,vals in zip(CONFIDENCE_TH,scores):
-        precision=float(vals['TP'])/float(vals['Predicted'])
+        precision=0 if vals['TP']==0 else float(vals['TP'])/float(vals['Predicted'])
         precisions.append(precision)
         recall = float(vals['Detected'])/total_gt
         recals.append(recall)
-        f_score = 2*((precision*recall)/(precision+recall))
+        f_score = 0 if (precision==0 and recall==0) else 2*((precision*recall)/(precision+recall))
         to_write.append(format_string.format(c,vals['TP'],vals['Predicted'],precision,recall,f_score))
 
         average_precision+=(recall-last_recall)*precision
