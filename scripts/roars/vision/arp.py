@@ -86,7 +86,7 @@ class ARP(PyKDL.Frame):
             z_up=True
         )
 
-    def detect(self, img, debug_draw=False):
+    def detect(self, img, debug_draw=False, contributes_output=None):
 
         markers = self.marker_detector.detectMarkersMap(
             img,
@@ -103,7 +103,8 @@ class ARP(PyKDL.Frame):
             #⬢⬢⬢⬢⬢➤ Sum marker single contribute
             contribute = self.arp_configuration.markers_poses[id].Inverse()
             contribute = marker * contribute
-
+            if contributes_output != None:
+                contributes_output.append(contribute)
             mean_pose[0] += contribute.p.x()
             mean_pose[1] += contribute.p.y()
             mean_pose[2] += contribute.p.z()
