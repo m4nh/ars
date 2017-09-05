@@ -56,8 +56,8 @@ def visualize(image_file, p_box,correct,gt_boxes):
         if gt.classId not in classes:
             classes.append(gt.classId)
     cmap=cv_show_detection.getColorMap(classes)
-    immy_correct = cv_show_detection.draw_prediction(immy, correct_detection,color_map=cmap,min_score_th=0.95)
-    immy_mistake = cv_show_detection.draw_prediction(immy_copy, mistakes,color_map=cmap,min_score_th=0.95)
+    immy_correct = cv_show_detection.draw_prediction(immy, correct_detection,color_map=cmap,min_score_th=0.01)
+    immy_mistake = cv_show_detection.draw_prediction(immy_copy, mistakes,color_map=cmap,min_score_th=0.01)
     immy_gt = cv_show_detection.draw_prediction(immy_copy_2,gt_boxes,color_map=cmap,min_score_th=0)
 
     print('Showing correct and wrong detections for {}, press a key to continue'.format(image_file))
@@ -102,12 +102,17 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser(description="Evaluation of an object detection system, loads predicted bounding box and ground truth ones and compute precision and recall at different confidence threshold. The result will be saved in a csv file for further elaboration")
     parser.add_argument('-p','--predicted',help="folder containing the predicted boudning boxes",required=True)
     parser.add_argument('-l','--label',help="folder containing the ground truth bounding box",required=True)
-    parser.add_argument('-o','--output',help="Folder were the result will be saved",required=True)
+    parser.add_argument('-o','--output',help="output of the csv file were the result will be saved",required=True)
     parser.add_argument('-i','--image',help="folder containing the image associated with the predicted bounding boxes, used only for visualization",default=None)
     parser.add_argument('-v','--verbosity',help="verbosity level, 0-> minimal output, 1-> show precision recall curve, >1-> show result on every single image",default=0,type=int)
+    parser.add_argument('--image_output',help="path were the precision recall curve will be saved, leave empty to dont save", default=None)
     parser.add_argument('--single_map', help="map gt box to one and only one detection",action='store_true')
     parser.add_argument('--iou_th',help="intersection over union thrshold for a good detction",default=0.5,type=float)
     args = parser.parse_args()
+
+    if args.verbosity>1 and args.image is None:
+        print('Verbosity set to max, please specify the folder were the image will be loaded with -i ${PATH}')
+        exit()
 
     to_check = [args.predicted,args.label,args.image] if args.verbosity>1 else [args.predicted,args.label]
     for f in to_check:
@@ -120,6 +125,7 @@ if __name__=='__main__':
 
     scores = [{'TP':0,'Predicted':0,'Detected':0} for _ in range(len(CONFIDENCE_TH))]
     total_gt = 0
+    avg_IOU = 0
     for l,p in zip(labels,predicted):
         gt_boxes = read_predictions(l)
         p_boxes = read_predictions(p)      
@@ -134,21 +140,24 @@ if __name__=='__main__':
             gt_indx,intersection = associate(pb,gt_boxes)
             gt_box = gt_boxes[gt_indx]
 
-            #if single map and already detcted another box with bigger intersection then myself skip
-            if args.single_map and gt_map[gt_indx]['intersection'] > intersection:
+            #if single map and already detcted another box with bigger iou then myself skip
+            iou = intersection/(pb.getArea()+gt_box.getArea()-intersection)
+            if args.single_map and gt_map[gt_indx]['intersection'] > iou:
                 continue
             
-            #compute iou and check against threshold
-            iou = intersection/(pb.getArea()+gt_box.getArea()-intersection)
+            # check against threshold
             if iou > args.iou_th and pb.classId==gt_box.classId:
                 #correct detection
                 correct[index]=True
+                avg_IOU+=iou
 
                 #if single map and gt_indx is already gt_map to another box fix correct array
                 if args.single_map and gt_map[gt_indx]['index'] is not None:
                     correct[gt_map[gt_indx]['index']]=False
+                    avg_IOU -= gt_map[gt_indx]['intersection']
+
                 gt_map[gt_indx]['index']=index
-                gt_map[gt_indx]['intersection']=intersection
+                gt_map[gt_indx]['intersection']=iou
                 gt_map[gt_indx]['max_conf']=pb.confidence
 
         if args.verbosity>1:
@@ -165,7 +174,7 @@ if __name__=='__main__':
             scores[i]['TP']+=np.sum(correct[:id_cut])
             scores[i]['Predicted']+=id_cut
             scores[i]['Detected']+=get_detected_for_th(gt_map,c)
-        
+
     #compute final values
     format_string='{};{};{};{};{};{}\n'
     to_write = ['CONF_TH;TP;Predictions;Precision;Recall;F-Score\n']
@@ -183,21 +192,21 @@ if __name__=='__main__':
 
         average_precision+=(recall-last_recall)*precision
         last_recall=recall
-        
+    
+    avg_IOU = avg_IOU/scores[-1]['TP']
+
     print('Final Result: ')
     for l in to_write:
         print(l.replace(';','\t'))
     print('Average Precision: {}'.format(average_precision))
+    print('Average IOU for correct boxes: {}'.format(avg_IOU))
 
-    #check if output folder exist
-    if not os.path.exists(args.output):
-        os.makedirs(args.output)
-    
-
-    with open(os.path.join(args.output,'result.txt'),'w+') as f_out:
+    with open(os.path.join(args.output),'w+') as f_out:
         f_out.writelines(to_write)
-        f_out.write('\n\n Average Precision:;{}\n'.format(average_precision))
+        f_out.write('\n\n Average Precision;{}\n'.format(average_precision))
+        f_out.write('Average IOU for correct classes; {}\n'.format(avg_IOU))
     
-    plot(precisions,recals,show=args.verbosity>0,output_path=os.path.join(args.output,'precision_recall.png'))
+    if args.image_output is not None:
+        plot(precisions,recals,show=args.verbosity>0,output_path=args.image_output)
 
     print('All Done')
