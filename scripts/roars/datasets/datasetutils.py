@@ -331,6 +331,9 @@ class TrainingScene(object):
         index = index % self.size()
         return self.image_filenames_lists[index]
 
+    def getFrameByIndex(self, index):
+        return TrainingFrame(scene=self, internal_index=index)
+
     def getCameraPose(self, index):
         index = index % self.size()
         robot_pose = self.robot_poses[index]
@@ -368,12 +371,15 @@ class TrainingScene(object):
 
     @staticmethod
     def loadFromFile(filename):
-        f = open(filename)
-        sc = json.loads(f.read(), object_hook=CustomJSONDecoder.decode)
-        if not isinstance(sc, TrainingScene):
+        try:
+            f = open(filename)
+            sc = json.loads(f.read(), object_hook=CustomJSONDecoder.decode)
+            if not isinstance(sc, TrainingScene):
+                return None
+            sc.validateImport()
+            return sc
+        except ValueError, e:
             return None
-        sc.validateImport()
-        return sc
 
     def getTrainingClassByLabel(self, label):
         if label in self.classes:
@@ -638,6 +644,9 @@ class TrainingFrame(object):
 
     def getCameraParams(self):
         return self.scene.camera_params
+
+    def getInstances(self):
+        return self.scene.getAllInstances()
 
     def getInstancesBoxes(self):
         instances = self.scene.getAllInstances()

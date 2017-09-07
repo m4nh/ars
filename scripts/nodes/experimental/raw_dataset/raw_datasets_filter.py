@@ -36,6 +36,7 @@ for d in raw_dataset_folders:
     dataset = RawDataset(dataset_path)
     for id, data in dataset.data_map.iteritems():
         whole_data[id] = data
+print("whole data size", len(whole_data))
 
 #⬢⬢⬢⬢⬢➤ Filter data
 filtered_data = []
