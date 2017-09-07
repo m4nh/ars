@@ -3,39 +3,17 @@ import cv2
 import argparse
 import glob
 import numpy as np
+import json
 from roars.detections import prediction
 from roars.gui import cv_show_detection
+from roars.evaluation import utils
 from matplotlib import pyplot as plt
 
 CONFIDENCE_TH=[1.0-0.05*i for i in range(1,21)]
 
-def check_existance(f):
-    if not os.path.exists(f):
-        print('ERROR: Unable to find folder: {}'.format(f))
-        exit()
 
-def read_predictions(file_name):
-    """
-    Read the annotation saved in yolo format in a .txt file and convert them in an array of detection objects
-    """
-    result=[]
-    with open(file_name,'r') as f_in:
-        lines=f_in.readlines()
-    
-    for l in lines:
-        encoded = [float(f) for f in l.strip().split()]
-        if len(encoded)==5:
-            #confidence is missing, add it
-            encoded+=[1]
-        result.append(prediction.prediction.fromArray(encoded,centers=True))  
-    return result
 
-def associate(predicted_box,gt_boxes):
-    intersections = [predicted_box.intersectionArea(bb) for bb in gt_boxes]
-    gt_indx = np.argmax(intersections)
-    return gt_indx, intersections[gt_indx]
-
-def visualize(image_file, p_box,correct,gt_boxes):
+def visualize(image_file,correct_detection,mistakes,missed,gt_boxes):
     #brutto assai...
     if os.path.exists(image_file.replace('.txt','.png')):
         image_file = image_file.replace('.txt', '.png')
@@ -48,8 +26,8 @@ def visualize(image_file, p_box,correct,gt_boxes):
     immy = cv2.imread(image_file)
     immy_copy = immy.copy()
     immy_copy_2 = immy.copy()
-    correct_detection = [box for cc, box in zip(correct, p_box) if cc]
-    mistakes = [box for cc, box in zip(correct, p_box) if cc==False]
+    immy_copy_3 = immy.copy()
+    
     #create label_dictionary
     classes = []
     for gt in gt_boxes:
@@ -59,12 +37,16 @@ def visualize(image_file, p_box,correct,gt_boxes):
     immy_correct = cv_show_detection.draw_prediction(immy, correct_detection,color_map=cmap,min_score_th=0.01)
     immy_mistake = cv_show_detection.draw_prediction(immy_copy, mistakes,color_map=cmap,min_score_th=0.01)
     immy_gt = cv_show_detection.draw_prediction(immy_copy_2,gt_boxes,color_map=cmap,min_score_th=0)
+    immy_missed = cv_show_detection.draw_prediction(immy_copy_3,missed,color_map=cmap,min_score_th=0.01)
 
     print('Showing correct and wrong detections for {}, press a key to continue'.format(image_file))
-    cv2.imshow('correct', immy_correct)
-    cv2.imshow('mistake', immy_mistake)
+    cv2.imshow('Predicted Correct', immy_correct)
+    cv2.imshow('Predicted Mistake', immy_mistake)
     cv2.imshow('Ground Truth',immy_gt)
+    cv2.imshow('Missed',immy_missed)
     cv2.waitKey()
+
+    
 
 def get_detected_for_th(gt_map,th):
     detected=0
@@ -108,15 +90,21 @@ if __name__=='__main__':
     parser.add_argument('--image_output',help="path were the precision recall curve will be saved, leave empty to dont save", default=None)
     parser.add_argument('--single_map', help="map gt box to one and only one detection",action='store_true')
     parser.add_argument('--iou_th',help="intersection over union thrshold for a good detction",default=0.5,type=float)
+    parser.add_argument('--out_folder',help="if set to something save a json file for each image with correct mistake and missed box",default=None)
     args = parser.parse_args()
 
     if args.verbosity>1 and args.image is None:
         print('Verbosity set to max, please specify the folder were the image will be loaded with -i ${PATH}')
         exit()
+    
+    if args.out_folder is not None:
+        if not os.path.exists(args.out_folder):
+            os.makedirs(args.out_folder)
 
     to_check = [args.predicted,args.label,args.image] if args.verbosity>1 else [args.predicted,args.label]
     for f in to_check:
-        check_existance(f)
+        if not utils.check_existance(f):
+            exit()
     
     labels = sorted(glob.glob(os.path.join(args.label,'*.txt')))
     predicted = sorted(glob.glob(os.path.join(args.predicted, '*.txt')))
@@ -127,21 +115,19 @@ if __name__=='__main__':
     total_gt = 0
     avg_IOU = 0
     for l,p in zip(labels,predicted):
-        gt_boxes = read_predictions(l)
-        p_boxes = read_predictions(p)      
+        gt_boxes = utils.read_predictions(l)
+        p_boxes = utils.read_predictions(p)      
         p_boxes.sort(key=lambda x:x.confidence,reverse=True)
-
 
         correct = [False]*len(p_boxes)
         gt_map = [{'index':None,'intersection':0,'max_conf':0} for _ in range(len(gt_boxes))]
         total_gt+=len(gt_boxes)
         for index,pb in enumerate(p_boxes):
             #get the ground truth box associated with this prediction
-            gt_indx,intersection = associate(pb,gt_boxes)
+            gt_indx,iou = utils.associate(pb,gt_boxes)
             gt_box = gt_boxes[gt_indx]
 
-            #if single map and already detcted another box with bigger iou then myself skip
-            iou = intersection/(pb.getArea()+gt_box.getArea()-intersection)
+            #if single map and already detected another box with bigger iou then myself skip
             if args.single_map and gt_map[gt_indx]['intersection'] > iou:
                 continue
             
@@ -160,9 +146,17 @@ if __name__=='__main__':
                 gt_map[gt_indx]['intersection']=iou
                 gt_map[gt_indx]['max_conf']=pb.confidence
 
+        correct_detection = [box for cc, box in zip(correct, p_boxes) if cc]
+        mistakes = [box for cc, box in zip(correct, p_boxes) if cc==False]
+        missed = [box for m,box in zip(gt_map,gt_boxes) if m['index'] is None]
+        if args.out_folder is not None:
+            out_file = os.path.join(args.out_folder,os.path.basename(l).replace('.txt','.json'))
+            with open(out_file,'w+') as f_out:
+                json.dump({'correct':correct_detection,'mistakes':mistakes,'missed':missed},f_out,default=lambda o : o.__dict__)
+
         if args.verbosity>1:
             image_file = os.path.join(args.image,os.path.basename(l))
-            visualize(image_file,p_boxes,correct,gt_boxes)
+            visualize(image_file,correct_detection,mistakes,missed,gt_boxes)
 
         #all prediction checked, now we need to create the precision recall curve at different confidence threshold
         for i,c in enumerate(CONFIDENCE_TH):
@@ -203,10 +197,9 @@ if __name__=='__main__':
 
     with open(os.path.join(args.output),'w+') as f_out:
         f_out.writelines(to_write)
-        f_out.write('\n\n Average Precision;{}\n'.format(average_precision))
+        f_out.write('\n\nAverage Precision;{}\n'.format(average_precision))
         f_out.write('Average IOU for correct classes; {}\n'.format(avg_IOU))
     
-    if args.image_output is not None:
-        plot(precisions,recals,show=args.verbosity>0,output_path=args.image_output)
+    plot(precisions,recals,show=args.verbosity>0,output_path=args.image_output)
 
     print('All Done')
