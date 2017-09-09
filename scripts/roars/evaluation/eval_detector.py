@@ -122,29 +122,31 @@ if __name__=='__main__':
         correct = [False]*len(p_boxes)
         gt_map = [{'index':None,'intersection':0,'max_conf':0} for _ in range(len(gt_boxes))]
         total_gt+=len(gt_boxes)
-        for index,pb in enumerate(p_boxes):
-            #get the ground truth box associated with this prediction
-            gt_indx,iou = utils.associate(pb,gt_boxes)
-            gt_box = gt_boxes[gt_indx]
 
-            #if single map and already detected another box with bigger iou then myself skip
-            if args.single_map and gt_map[gt_indx]['intersection'] > iou:
-                continue
-            
-            # check against threshold
-            if iou > args.iou_th and pb.classId==gt_box.classId:
-                #correct detection
-                correct[index]=True
-                avg_IOU+=iou
+        if len(gt_boxes)!=0:
+            for index,pb in enumerate(p_boxes):
+                #get the ground truth box associated with this prediction
+                gt_indx,iou = utils.associate(pb,gt_boxes)
+                gt_box = gt_boxes[gt_indx]
 
-                #if single map and gt_indx is already gt_map to another box fix correct array
-                if args.single_map and gt_map[gt_indx]['index'] is not None:
-                    correct[gt_map[gt_indx]['index']]=False
-                    avg_IOU -= gt_map[gt_indx]['intersection']
+                #if single map and already detected another box with bigger iou then myself skip
+                if args.single_map and gt_map[gt_indx]['intersection'] > iou:
+                    continue
+                
+                # check against threshold
+                if iou > args.iou_th and pb.classId==gt_box.classId:
+                    #correct detection
+                    correct[index]=True
+                    avg_IOU+=iou
 
-                gt_map[gt_indx]['index']=index
-                gt_map[gt_indx]['intersection']=iou
-                gt_map[gt_indx]['max_conf']=pb.confidence
+                    #if single map and gt_indx is already gt_map to another box fix correct array
+                    if args.single_map and gt_map[gt_indx]['index'] is not None:
+                        correct[gt_map[gt_indx]['index']]=False
+                        avg_IOU -= gt_map[gt_indx]['intersection']
+
+                    gt_map[gt_indx]['index']=index
+                    gt_map[gt_indx]['intersection']=iou
+                    gt_map[gt_indx]['max_conf']=pb.confidence
 
         correct_detection = [box for cc, box in zip(correct, p_boxes) if cc]
         mistakes = [box for cc, box in zip(correct, p_boxes) if cc==False]
@@ -191,11 +193,15 @@ if __name__=='__main__':
 
     print('Final Result: ')
     for l in to_write:
-        print(l.replace(';','\t'))
+        print(l.replace(';','\t\t'))
     print('Average Precision: {}'.format(average_precision))
     print('Average IOU for correct boxes: {}'.format(avg_IOU))
 
-    with open(os.path.join(args.output),'w+') as f_out:
+    parent_dir = os.path.abspath(os.path.join(args.output, os.pardir))
+    if not os.path.exists(parent_dir):
+        os.makedirs(parent_dir)
+
+    with open(args.output,'w+') as f_out:
         f_out.writelines(to_write)
         f_out.write('\n\nAverage Precision;{}\n'.format(average_precision))
         f_out.write('Average IOU for correct classes; {}\n'.format(avg_IOU))
