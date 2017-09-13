@@ -11,8 +11,6 @@ from matplotlib import pyplot as plt
 
 CONFIDENCE_TH=[1.0-0.05*i for i in range(1,21)]
 
-
-
 def visualize(image_file,correct_detection,mistakes,missed,gt_boxes):
     #brutto assai...
     if os.path.exists(image_file.replace('.txt','.png')):
@@ -48,10 +46,10 @@ def visualize(image_file,correct_detection,mistakes,missed,gt_boxes):
 
     
 
-def get_detected_for_th(gt_map,th):
+def get_detected_for_th(gt_map,th,class_id=None):
     detected=0
     for g in gt_map:
-        if g['max_conf']>th:
+        if g['max_conf']>th and (class_id==None or g['class_id']==class_id):
             detected+=1
     return detected
 
@@ -79,6 +77,54 @@ def plot(precisions,recalls,output_path=None,show=False):
     
     if show:
         plt.show()
+
+def make_score_holder():
+    return [{'TP': 0, 'Predicted': 0, 'Detected': 0, 'Total':0, 'IOU':0} for _ in range(len(CONFIDENCE_TH))]
+
+def update_scores(prediction,correct,global_scores,class_scores,iou=None):
+    class_id = prediction.classId
+    if class_id not in class_scores:
+        class_scores[class_id] = make_score_holder()
+    conf = prediction.confidence
+    for i, th in enumerate(CONFIDENCE_TH):
+        if conf > th:
+            if correct:
+                global_scores[i]['TP'] += 1
+                class_scores[class_id][i]['TP'] += 1
+                global_scores[i]['IOU']+=iou
+                class_scores[class_id][i]['IOU']+=iou
+
+            global_scores[i]['Predicted'] += 1
+            class_scores[class_id][i]['Predicted'] += 1
+
+def make_table(to_write,scores):
+    format_string = '{};{};{};{};{};{};{}\n'
+    to_write.append('CONF_TH;TP;Predictions;Precision;Recall;F-Score;AVG_IOU;\n')
+    average_precision = 0
+    global_avg_IOU = 0
+    last_recall = 0
+    precisions = []
+    recals = []
+    for c, vals in zip(CONFIDENCE_TH, scores):
+        precision = 0 if vals['TP'] == 0 else float(vals['TP']) / float(vals['Predicted'])
+        precisions.append(precision)
+        recall = float(vals['Detected']) / vals['Total']
+        recals.append(recall)
+        f_score = 0 if (precision == 0 and recall == 0) else 2 * ((precision * recall) / (precision + recall))
+        avgIOU = vals['IOU']/vals['TP']
+        to_write.append(format_string.format(c, vals['TP'], vals['Predicted'], precision, recall, f_score, avgIOU))
+
+        average_precision += (recall - last_recall) * precision
+        last_recall = recall
+
+        global_avg_IOU += avgIOU
+
+    global_avg_IOU = global_avg_IOU / len(CONFIDENCE_TH)
+    to_write.append('\n\nMean Average Precision;{}\n'.format(average_precision))
+    to_write.append('Mean average IOU;{}\n'.format(global_avg_IOU))
+
+    return precisions, recals
+
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description="Evaluation of an object detection system, loads predicted bounding box and ground truth ones and compute precision and recall at different confidence threshold. The result will be saved in a csv file for further elaboration")
@@ -111,17 +157,15 @@ if __name__=='__main__':
     assert(len(labels)==len(predicted))
     print('Found {} image to test'.format(len(labels)))
 
-    scores = [{'TP':0,'Predicted':0,'Detected':0} for _ in range(len(CONFIDENCE_TH))]
-    total_gt = 0
-    avg_IOU = 0
+    global_scores = make_score_holder()
+    class_scores = {}
     for l,p in zip(labels,predicted):
         gt_boxes = utils.read_predictions(l)
         p_boxes = utils.read_predictions(p)      
         p_boxes.sort(key=lambda x:x.confidence,reverse=True)
 
         correct = [False]*len(p_boxes)
-        gt_map = [{'index':None,'intersection':0,'max_conf':0} for _ in range(len(gt_boxes))]
-        total_gt+=len(gt_boxes)
+        gt_map = [{'index':None,'intersection':0,'max_conf':0,'class_id':g.classId} for g in gt_boxes]
 
         if len(gt_boxes)!=0:
             for index,pb in enumerate(p_boxes):
@@ -137,18 +181,23 @@ if __name__=='__main__':
                 if iou > args.iou_th and pb.classId==gt_box.classId:
                     #correct detection
                     correct[index]=True
-                    avg_IOU+=iou
 
                     #if single map and gt_indx is already gt_map to another box fix correct array
                     if args.single_map and gt_map[gt_indx]['index'] is not None:
                         correct[gt_map[gt_indx]['index']]=False
-                        avg_IOU -= gt_map[gt_indx]['intersection']
 
                     gt_map[gt_indx]['index']=index
                     gt_map[gt_indx]['intersection']=iou
                     gt_map[gt_indx]['max_conf']=pb.confidence
 
         correct_detection = [box for cc, box in zip(correct, p_boxes) if cc]
+        iou_id=[]
+        iou_val=[]
+        for g in gt_map:
+            if g['index'] is not None:
+                iou_id.append(g['index'])
+                iou_val.append(g['intersection'])
+        ious = [x for _, x in sorted(zip(iou_id, iou_val))]
         mistakes = [box for cc, box in zip(correct, p_boxes) if cc==False]
         missed = [box for m,box in zip(gt_map,gt_boxes) if m['index'] is None]
         if args.out_folder is not None:
@@ -161,50 +210,40 @@ if __name__=='__main__':
             visualize(image_file,correct_detection,mistakes,missed,gt_boxes)
 
         #all prediction checked, now we need to create the precision recall curve at different confidence threshold
+        for c,ii in zip(correct_detection,ious):
+            update_scores(c,True,global_scores,class_scores,ii)
+
+        for m in mistakes:
+            update_scores(m,False,global_scores,class_scores)
+        
         for i,c in enumerate(CONFIDENCE_TH):
-            id_cut=len(p_boxes)
-            for idx,p in enumerate(p_boxes):
-                if c>p.confidence:
-                    id_cut=idx
-                    break
-            scores[i]['TP']+=np.sum(correct[:id_cut])
-            scores[i]['Predicted']+=id_cut
-            scores[i]['Detected']+=get_detected_for_th(gt_map,c)
+            global_scores[i]['Detected'] += get_detected_for_th(gt_map, c)
+            global_scores[i]['Total']+=len(gt_boxes)
+        
+        for k in class_scores:
+            for i,c in enumerate(CONFIDENCE_TH):
+                class_scores[k][i]['Detected']+=get_detected_for_th(gt_map, c,k)
+                class_scores[k][i]['Total']+=np.sum([1 for g in gt_boxes if g.classId==k])
 
+        
     #compute final values
-    format_string='{};{};{};{};{};{}\n'
-    to_write = ['CONF_TH;TP;Predictions;Precision;Recall;F-Score\n']
-    average_precision = 0
-    last_recall = 0
-    precisions=[]
-    recals=[]
-    for c,vals in zip(CONFIDENCE_TH,scores):
-        precision=0 if vals['TP']==0 else float(vals['TP'])/float(vals['Predicted'])
-        precisions.append(precision)
-        recall = float(vals['Detected'])/total_gt
-        recals.append(recall)
-        f_score = 0 if (precision==0 and recall==0) else 2*((precision*recall)/(precision+recall))
-        to_write.append(format_string.format(c,vals['TP'],vals['Predicted'],precision,recall,f_score))
+    to_write = ['Global Scores\n\n']
+    precisions, recals=make_table(to_write, global_scores)
 
-        average_precision+=(recall-last_recall)*precision
-        last_recall=recall
+    for k in class_scores:
+        to_write.append('\n\nClass ID: {}\n'.format(k))
+        make_table(to_write,class_scores[k])
     
-    avg_IOU = avg_IOU/scores[-1]['TP']
-
     print('Final Result: ')
     for l in to_write:
         print(l.replace(';','\t\t'))
-    print('Average Precision: {}'.format(average_precision))
-    print('Average IOU for correct boxes: {}'.format(avg_IOU))
-
+    
     parent_dir = os.path.abspath(os.path.join(args.output, os.pardir))
     if not os.path.exists(parent_dir):
         os.makedirs(parent_dir)
 
     with open(args.output,'w+') as f_out:
         f_out.writelines(to_write)
-        f_out.write('\n\nAverage Precision;{}\n'.format(average_precision))
-        f_out.write('Average IOU for correct classes; {}\n'.format(avg_IOU))
     
     plot(precisions,recals,show=args.verbosity>0,output_path=args.image_output)
 
