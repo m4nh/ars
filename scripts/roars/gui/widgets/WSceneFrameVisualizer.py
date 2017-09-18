@@ -122,7 +122,9 @@ class WSceneFrameVisualizer(WBaseWidget):
 
     def refresh(self):
         if self.scene:
-            display_image = self.current_image.copy()
+            display_image = cv2.cvtColor(
+                self .current_image, cv2.COLOR_BGR2RGB)
+
             self.drawInstances(display_image)
 
             pix = PyQtImageConverter.cvToQPixmap(display_image)

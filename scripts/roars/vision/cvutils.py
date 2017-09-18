@@ -17,7 +17,7 @@ def reproject3DPoints(world_points, camera=None, camera_pose=PyKDL.Frame()):
     return img_points
 
 
-def reproject3DPoint(x, y, z, camera=None, camera_pose=PyKDL.Frame()):
+def reproject3DPoint(x, y, z, camera=None, camera_pose=PyKDL.Frame(), out_type=int, ret_tuple=True):
     obj_points = np.array([[x, y, z]], dtype="float32")
     cRvec, cTvec = transformations.KDLToCv(camera_pose)
     img_points, _ = cv2.projectPoints(
@@ -27,5 +27,8 @@ def reproject3DPoint(x, y, z, camera=None, camera_pose=PyKDL.Frame()):
         camera.camera_matrix,
         camera.distortion_coefficients
     )
-    img_points = np.reshape(img_points, (2))
-    return img_points
+    img_points = np.reshape(img_points, (2)).astype(out_type)
+    if ret_tuple:
+        return tuple(img_points)
+    else:
+        return img_points

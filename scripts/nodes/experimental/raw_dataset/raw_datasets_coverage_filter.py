@@ -77,6 +77,7 @@ for id_file, data in raw_dataset.data_map.iteritems():
 
 coverage_map = {}
 
+filtered_ids = {}
 for id, frame in matched_frames.iteritems():
     print "#########"
     print id, frame.getCameraPose()
@@ -95,12 +96,12 @@ for id, frame in matched_frames.iteritems():
 
         trans = transformations.KDLtoNumpyVector(i_frame)
         sph = asSpherical(trans)
-        # if sph[2] > 0 and sph[2] < 90:
-        coverage_map[label].append(trans)
+        if label == 0 and sph[2] > 0 and sph[2] < 90:
+            filtered_ids[id] = 1
 
 
-for label, data in coverage_map.iteritems():
-    out_file = os.path.join(output_folder, "{}.txt".format(label))
-    out_data = np.array(data).reshape((len(data), 7))
-    np.savetxt(out_file, out_data)
-    print label, len(data)
+output_ids = os.path.join(output_folder, "coverage_filtered_ids.txt")
+f = open(output_ids, 'w')
+for id, v in filtered_ids.iteritems():
+    f.write(id + "\n")
+f.close()

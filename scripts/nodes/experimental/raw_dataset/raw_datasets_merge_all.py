@@ -18,45 +18,28 @@ import sys
 import shutil
 
 #⬢⬢⬢⬢⬢➤ NODE
-node = RosNode("raw_datasets_filter")
+node = RosNode("raw_datasets_merge_all")
 
 datasets_folder = node.setupParameter("datasets_folder", "")
 output_folder = node.setupParameter("output_folder", "")
-filter_file = node.setupParameter("filter_file", "")
-negative = node.setupParameter("negative", False)
-
-filter_ids = open(filter_file, 'r').read().splitlines()
 
 raw_dataset_folders = sorted(os.listdir(datasets_folder))
 
+
+data_list = []
 #⬢⬢⬢⬢⬢➤ Groups all data
 whole_data = {}
 for d in raw_dataset_folders:
     dataset_path = os.path.join(datasets_folder, d)
     dataset = RawDataset(dataset_path)
-    for id, data in dataset.data_map.iteritems():
-        print("Adding", id)
-        whole_data[id] = data
-print("whole data size", len(whole_data))
+    data_list.extend(dataset.data_list)
 
-#⬢⬢⬢⬢⬢➤ Filter data
-filtered_data = []
-
-if negative:
-    for id in filter_ids:
-        filtered_data.append(whole_data[id])
-
-else:
-    for id, data in whole_data.iteritems():
-        if id not in filter_ids:
-            filtered_data.append(data)
-
-print(len(filtered_data))
 
 dataset = RawDataset(output_folder, create=True)
+
 ZERO_PADDING_SIZE = 5
 counter = 0
-for data in filtered_data:
+for data in data_list:
 
     counter_string = '{}'.format(str(counter).zfill(ZERO_PADDING_SIZE))
 
@@ -68,6 +51,6 @@ for data in filtered_data:
     shutil.copyfile(data['id'], id_file)
     shutil.copyfile(data['label'], label_file)
 
-    print counter_string, data['id']
+    print data['id']
 
     counter = counter + 1

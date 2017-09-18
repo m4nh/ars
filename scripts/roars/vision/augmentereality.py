@@ -397,6 +397,60 @@ class BoundingBoxFromSixPoints(GenericBoundingBox):
 ###########################################################################
 ###########################################################################
 
+class BoundingBoxFromFourPoints(GenericBoundingBox):
+
+    def __init__(self, points):
+        super(BoundingBoxFromFourPoints, self).__init__()
+        self.valid = self.buildFromPoints(points)
+
+    def buildFromPoints(self, points):
+        if len(points) == 4:
+            p0 = points[0]
+            p1 = points[1]
+            p2 = points[2]
+            p3 = points[3]
+
+            vx = (p1 - p0) / np.linalg.norm((p1 - p0))
+            vz = (p2 - p1) / np.linalg.norm((p2 - p1))
+            vy = np.cross(vz, vx)
+
+            s = np.array([
+                np.linalg.norm(p1 - p0),
+                np.linalg.norm(p3 - p2),
+                np.linalg.norm(p2 - p1)
+            ])
+
+            frame = PyKDL.Frame()
+            frame.M = PyKDL.Rotation(
+                vx[0], vy[0], vz[0],
+                vx[1], vy[1], vz[1],
+                vx[2], vy[2], vz[2]
+            )
+
+            frame.p = PyKDL.Vector(
+                p0[0],
+                p0[1],
+                p0[2]
+            )
+
+            delta = PyKDL.Frame(PyKDL.Vector(
+                s[0] * 0.5, s[1] * 0.5, 0.0
+            ))
+            frame = frame * delta
+
+            self.rf = frame
+            self.size = s
+            return True
+        return False
+
+
+###########################################################################
+###########################################################################
+###########################################################################
+###########################################################################
+###########################################################################
+###########################################################################
+
 
 class BoundingBoxGenerator(object):
 
@@ -404,5 +458,7 @@ class BoundingBoxGenerator(object):
     def getGenerator(number_of_points):
         if number_of_points == 6:
             return BoundingBoxFromSixPoints
+        if number_of_points == 4:
+            return BoundingBoxFromFourPoints
         else:
             return None

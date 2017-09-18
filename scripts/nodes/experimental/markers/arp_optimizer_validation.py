@@ -23,12 +23,7 @@ node = RosNode("arp_optimizer_validation")
 #⬢⬢⬢⬢⬢➤ Sets HZ from parameters
 node.setHz(node.setupParameter("hz", 30))
 debug = node.setupParameter("debug", True)
-output_folder = node.setupParameter(
-    "output_folder", "/home/daniele/Desktop/tmp/arp_calibration/markers_detections")
 
-if not os.path.exists(output_folder):
-    print ("Path doesn't exist'")
-    sys.exit(0)
 
 camera_file = node.getFileInPackage(
     'roars',
@@ -60,7 +55,7 @@ for filename in files:
     img = cv2.imread(filename)
 
     contributes = []
-    arp_pose = arp.detect(img, debug_draw=True, contributes_output=None)
+    arp_pose = arp.detect(img, debug_draw=False, contributes_output=None)
 
     if arp_pose:
         print arp_pose
@@ -71,14 +66,6 @@ for filename in files:
             camera=camera
         )
 
-        cv2.circle(
-            img,
-            (int(img_points[0]), int(img_points[1])),
-            5,
-            (0, 0, 255),
-            -1
-        )
-
         rod_p = PyKDL.Frame(PyKDL.Vector(0, 0, 0.06))
 
         vob_rod = VirtualObject(
@@ -86,8 +73,16 @@ for filename in files:
         vob_body = VirtualObject(
             arp_pose * rod_p, size=[0.05, 0.05, 0.22 - rod_p.p.z()])
 
-        vob_rod.draw(img, camera=camera, color=(0, 255, 0))
-        vob_body.draw(img, camera=camera, color=(0, 255, 255))
+        vob_rod.draw(img, camera=camera, color=(54, 67, 244), thickness=1)
+        vob_body.draw(img, camera=camera, color=(54, 67, 244), thickness=2)
+
+        cv2.circle(
+            img,
+            (int(img_points[0]), int(img_points[1])),
+            5,
+            (244,  169, 3),
+            4
+        )
 
         print "Contributes", contributes
         for c in contributes:
@@ -101,13 +96,14 @@ for filename in files:
                 img,
                 (int(img_points[0]), int(img_points[1])),
                 4,
-                (0, 255, 255),
+                (80, 175, 76),
                 -1
             )
 
     if debug:
-        cv2.imshow("img", np.flip(img, 0))
+        cv2.imshow("img", img)
         c = cv2.waitKey(0)
-        if c == 1048689:
+        print c
+        if c == 113:
             sys.exit(0)
     print basename

@@ -151,7 +151,7 @@ class DarkNetPrediction
         cv::rectangle(img, cv::Point(left, top), cv::Point(right, bot), color, 2);
         cv::rectangle(img, cv::Point(left, top - 30), cv::Point(right, top), color, 2);
         cv::rectangle(img, cv::Point(left, top - 30), cv::Point(right, top), color, -1);
-        cv::putText(img, this->name, cv::Point(left, top), cv::FONT_HERSHEY_COMPLEX, 0.75, cv::Scalar(255, 255, 255), 2);
+        cv::putText(img, this->name, cv::Point(left, top), cv::FONT_HERSHEY_SIMPLEX, 0.55, cv::Scalar(255, 255, 255), 2);
     }
 
     friend std::ostream &operator<<(std::ostream &os, const DarkNetPrediction &p)
