@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
-from roars.datasets.datasetutils import TrainingScene, TrainingClassesMap, TrainingClass
+from roars.datasets.datasetutils import TrainingScene, TrainingClassesMap, TrainingClass, TrainingInstance
 from roars.rosutils.rosnode import RosNode
 from roars.datasets.datasetutils import JSONHelper
 from roars.gui.pyqtutils import PyQtWindow, PyQtImageConverter, PyQtWidget
 from roars.gui.widgets.WBaseWidget import WBaseWidget
 from roars.gui.widgets.WSceneFrameVisualizer import WSceneFrameVisualizer
 from roars.vision.augmentereality import VirtualObject
+import roars.vision.cvutils as cvutils
 import roars.geometry.lines as lines
 from PyQt4 import QtCore
 from PyQt4.QtCore import *
@@ -20,7 +21,7 @@ import cv2
 import numpy as np
 import functools
 import sys
-
+import math
 
 #⬢⬢⬢⬢⬢➤ NODE
 node = RosNode("roars_dataset_explorer_v2")
@@ -57,6 +58,7 @@ class MainWindow(PyQtWindow):
             fv.mousePressCallback = self.frameClickedPointCallback
 
         self.scene_visualizers_points = []
+        self.scene_visualizers_boxes = []
 
         self.ui_view_container_1.addWidget(self.ui_scene_visualizers_list[1])
         self.ui_view_container_2.addWidget(self.ui_scene_visualizers_list[2])
@@ -67,6 +69,9 @@ class MainWindow(PyQtWindow):
             self.randomizeVisualizers)
 
         #⬢⬢⬢⬢⬢➤ Instances_management
+        self.ui_button_create_from_boxes.clicked.connect(
+            self.createInstancesFromBoxes
+        )
         self.ui_button_load_raw_objects.clicked.connect(
             self.loadRawObjects
         )
@@ -174,12 +179,19 @@ class MainWindow(PyQtWindow):
             if 'rel' in obj_name:
                 mag = 0.001
                 direction = 1 if 'plus' in obj_name else -1
-                component = str(obj_name.split('rel_')[1].split('_')[0])
+                # component = str(obj_name.split('rel_')[1].split('_')[0])
+                # dx = direction * mag if 'x' in obj_name else 0
+                # dy = direction * mag if 'y' in obj_name else 0
+                # dz = direction * mag if 'z' in obj_name else 0
+                # inst.relativeTranslation(dx, dy, dz)
+                # self.updateInstanceValues(inst)
+
                 dx = direction * mag if 'x' in obj_name else 0
                 dy = direction * mag if 'y' in obj_name else 0
                 dz = direction * mag if 'z' in obj_name else 0
-                inst.relativeTranslation(dx, dy, dz)
+                inst.grow(dx, dy, dz)
                 self.updateInstanceValues(inst)
+
             else:
                 for attr, conv in self.frame_coordinates_attributes.iteritems():
                     if attr in obj_name:
@@ -249,6 +261,9 @@ class MainWindow(PyQtWindow):
 
     def setInstances(self, instances):
         self.temporary_instances = instances
+        self.refreshInstacesList(self.scene.getAllInstances())
+
+    def refreshInstances(self):
         self.refreshInstacesList(self.scene.getAllInstances())
 
     def refreshInstacesList(self, instances):
@@ -325,6 +340,7 @@ class MainWindow(PyQtWindow):
 
     def refresh(self):
         self.refreshVisualizers()
+
         # display_image = self.current_image.copy()
         # self.drawInstances(display_image)
 
@@ -347,10 +363,36 @@ class MainWindow(PyQtWindow):
     def test(self):
         print("ok")
 
-    def frameClickedPointCallback(self, frame, point, action):
+    def createInstancesFromBoxes(self):
+        x = lines.lineLineIntersection(self.scene_visualizers_points)
+        pp = self.ui_scene_visualizers_list[1].debugComputePointInCameraFrame(
+            x)
+        d = pp[2]
+        sx = math.fabs(
+            self.scene_visualizers_boxes[0][1][0] - self.scene_visualizers_boxes[0][0][0])
+
+        ps = 0.8 * sx / 600 * d
+
+        frame = PyKDL.Frame()
+        frame.p = PyKDL.Vector(
+            x[0], x[1], x[2] - ps * 0.5
+        )
+
+        training_class = self.scene.getTrainingClass(-1)
+        inst = TrainingInstance(frame=frame, size=[ps, ps, ps])
+        training_class.instances.append(inst)
+
+        self.setInstances(self.scene.getAllInstances())
+        self.refresh()
+        self.ui_scene_visualizers_list[1].clearClickedPoints()
+        self.ui_scene_visualizers_list[2].clearClickedPoints()
+        self.scene_visualizers_points = []
+        self.scene_visualizers_boxes = []
+
+    def frameClickedPointCallback(self, frame, data, action):
         if action == 'ADD':
             ray3D = lines.compute3DRay(
-                point, self.scene.camera_params.camera_matrix_inv, frame.getCameraPose())
+                data, self.scene.camera_params.camera_matrix_inv, frame.getCameraPose())
 
             z = np.array([
                 frame.getCameraPose().M.UnitZ().x(),
@@ -366,15 +408,45 @@ class MainWindow(PyQtWindow):
             print "###"
             print p, z
             self.scene_visualizers_points.append(ray3D)
+
             rays_size = len(self.scene_visualizers_points)
             print("Rays", rays_size)
             if rays_size >= 4:
                 x = lines.lineLineIntersection(self.scene_visualizers_points)
                 print x
 
+        if action == 'ADD_BOX':
+            center = np.array(data[0]) + np.array(data[1])
+            center = center * 0.5
+
+            ray3D = lines.compute3DRay(
+                center, self.scene.camera_params.camera_matrix_inv, frame.getCameraPose())
+            z = np.array([
+                frame.getCameraPose().M.UnitZ().x(),
+                frame.getCameraPose().M.UnitZ().y(),
+                frame.getCameraPose().M.UnitZ().z()
+            ])
+            p = np.array([
+                frame.getCameraPose().p.x(),
+                frame.getCameraPose().p.y(),
+                frame.getCameraPose().p.z()
+            ])
+            print ray3D
+            print "###"
+            print p, z
+            self.scene_visualizers_points.append(ray3D)
+            self.scene_visualizers_boxes.append(data)
+            rays_size = len(self.scene_visualizers_points)
+            print("Rays", rays_size)
+            if rays_size >= 2:
+                x = lines.lineLineIntersection(self.scene_visualizers_points)
+                print x
+
 
 gui_file = node.getFileInPackage(
-    'roars', 'data/gui_forms/arp_gui.ui'
+    'roars', 'data/gui_forms/roars_labeler_window.ui'
+
+
 )
 window = MainWindow(
     uifile=gui_file

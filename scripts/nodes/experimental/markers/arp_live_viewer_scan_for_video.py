@@ -21,11 +21,11 @@ import PyKDL
 
 collected_objects = [
     {
-        'rf': [-0.0615924,   0.06422103,  0.66401128, 0.85372638, 0.39145536, -0.12949947, 0.31525226],
+        'rf': [-0.0615924,   0.06422103,  0.64401128, 0.85372638, 0.39145536, -0.12949947, 0.31525226],
         'size': [0.05621781,  0.04149845,  0.07425442]
     },
     {
-        'rf': [0.04838199,  0.06189513,  0.6655786,  0.9376154, 0.11573905, -0.03412503,  0.32530516],
+        'rf': [0.04838199,  0.06189513,  0.6455786,  0.9376154, 0.11573905, -0.03412503,  0.32530516],
         'size': [0.06787839,  0.04252589,  0.07461602]
     }
 ]
@@ -68,12 +68,16 @@ camera_extrinsics = np.array([0.155488958419836, -0.001157008853558, -0.17480400
 camera_extrinsics = transformations.NumpyVectorToKDL(camera_extrinsics)
 
 first_camera_pose = None
+windows_config = False
 
 #⬢⬢⬢⬢⬢➤ Camera Callback
 
 
 def cameraCallback(frame):
-    global current_arp_pose, collected_boxes, first_camera_pose
+    global current_arp_pose, collected_boxes, first_camera_pose, windows_config
+    if not windows_config:
+        windows_config = True
+        cv2.namedWindow("img", cv2.WINDOW_NORMAL)
     #⬢⬢⬢⬢⬢➤ Grabs image from Frame
     img = frame.rgb_image.copy()
 
@@ -96,7 +100,8 @@ def cameraCallback(frame):
         rf = first_camera_pose * rf
 
         vo = VirtualObject(frame=rf, size=size)
-        vo.draw(img, camera=camera, camera_frame=camera_pose)
+        vo.draw(img, camera=camera, camera_frame=camera_pose,
+                color=(243, 150, 33))
 
         print "B", transformations.KDLtoNumpyVector(rf), size
 

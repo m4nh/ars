@@ -81,10 +81,17 @@ camera_extrinsics = np.array([0.155488958419836, -0.001157008853558, -0.17480400
 
 camera_extrinsics = transformations.NumpyVectorToKDL(camera_extrinsics)
 
+windows_config = False
 
 #⬢⬢⬢⬢⬢➤ Camera Callback
+
+
 def cameraCallback(frame):
-    global current_arp_pose, collected_boxes
+    global current_arp_pose, collected_boxes, windows_config
+    if not windows_config:
+        windows_config = True
+        cv2.namedWindow("img", cv2.WINDOW_NORMAL)
+
     #⬢⬢⬢⬢⬢➤ Grabs image from Frame
     img = frame.rgb_image.copy()
 
@@ -112,11 +119,11 @@ def cameraCallback(frame):
     for p in collected_points:
         center = cvutils.reproject3DPoint(
             p[0], p[1], p[2], camera=camera, camera_pose=PyKDL.Frame())
-        cv2.circle(img, center, 5, (255, 255, 255), -1)
+        cv2.circle(img, center, 5, (243, 150, 33), -1)
 
     for b in collected_boxes:
         vo = b.buildVirtualObject()
-        vo.draw(img, camera=camera)
+        vo.draw(img, camera=camera, color=(243, 150, 33))
         print "B", transformations.KDLtoNumpyVector(vo), b.size
 
     cv2.imshow("img", img)

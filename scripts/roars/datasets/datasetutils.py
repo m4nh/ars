@@ -536,6 +536,12 @@ class TrainingInstance(PyKDL.Frame):
         y2 = y if y2 == None else y2
         self.M = PyKDL.Rotation.RPY(r2, p2, y2)
 
+    def setSize(self, sx, sy, sz):
+        self.size = np.array([sx, sy, sz])
+
+    def grow(self, sx, sy, sz):
+        self.size = self.size + np.array([sx, sy, sz])
+
     def setFrameProperty(self, name, value):
         if name == 'cx':
             self.p.x(value)
