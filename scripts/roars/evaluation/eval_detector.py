@@ -83,8 +83,6 @@ def make_score_holder():
 
 def update_scores(prediction,correct,global_scores,class_scores,iou=None):
     class_id = prediction.classId
-    if class_id not in class_scores:
-        class_scores[class_id] = make_score_holder()
     conf = prediction.confidence
     for i, th in enumerate(CONFIDENCE_TH):
         if conf > th:
@@ -108,10 +106,10 @@ def make_table(to_write,scores):
     for c, vals in zip(CONFIDENCE_TH, scores):
         precision = 0 if vals['TP'] == 0 else float(vals['TP']) / float(vals['Predicted'])
         precisions.append(precision)
-        recall = float(vals['Detected']) / vals['Total']
+        recall = 0 if vals['Total'] == 0 else float(vals['Detected']) / vals['Total']
         recals.append(recall)
         f_score = 0 if (precision == 0 and recall == 0) else 2 * ((precision * recall) / (precision + recall))
-        avgIOU = vals['IOU']/vals['TP']
+        avgIOU = 0 if vals['TP']==0 else vals['IOU']/vals['TP']
         to_write.append(format_string.format(c, vals['TP'], vals['Predicted'], precision, recall, f_score, avgIOU))
 
         average_precision += (recall - last_recall) * precision
@@ -137,6 +135,7 @@ if __name__=='__main__':
     parser.add_argument('--single_map', help="map gt box to one and only one detection",action='store_true')
     parser.add_argument('--iou_th',help="intersection over union thrshold for a good detction",default=0.5,type=float)
     parser.add_argument('--out_folder',help="if set to something save a json file for each image with correct mistake and missed box",default=None)
+    parser.add_argument('--ignore_class',help="flag, if present ignore class predicted when computing precision and recall",action="store_true")
     args = parser.parse_args()
 
     if args.verbosity>1 and args.image is None:
@@ -159,10 +158,15 @@ if __name__=='__main__':
 
     global_scores = make_score_holder()
     class_scores = {}
-    for l,p in zip(labels,predicted):
+    for img_indx,(l,p) in enumerate(zip(labels,predicted)):
         gt_boxes = utils.read_predictions(l)
         p_boxes = utils.read_predictions(p)      
         p_boxes.sort(key=lambda x:x.confidence,reverse=True)
+
+        #create class scores for class
+        for gb in gt_boxes:
+            if gb.classId not in class_scores:
+                class_scores[gb.classId] = make_score_holder()
 
         correct = [False]*len(p_boxes)
         gt_map = [{'index':None,'intersection':0,'max_conf':0,'class_id':g.classId} for g in gt_boxes]
@@ -178,7 +182,7 @@ if __name__=='__main__':
                     continue
                 
                 # check against threshold
-                if iou > args.iou_th and pb.classId==gt_box.classId:
+                if iou > args.iou_th and (args.ignore_class or pb.classId == gt_box.classId):
                     #correct detection
                     correct[index]=True
 
@@ -225,7 +229,8 @@ if __name__=='__main__':
                 class_scores[k][i]['Detected']+=get_detected_for_th(gt_map, c,k)
                 class_scores[k][i]['Total']+=np.sum([1 for g in gt_boxes if g.classId==k])
 
-        
+        print('Image done: {}/{}'.format(img_indx,len(labels)),end='\r')
+    
     #compute final values
     to_write = ['Global Scores\n\n']
     precisions, recals=make_table(to_write, global_scores)
