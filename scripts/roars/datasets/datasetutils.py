@@ -144,13 +144,13 @@ class TrainingCamera(object):
 
 
 class TrainingScene(object):
-    DEFAULT_CAMERA_POSE_NAME = 'camera_transform.txt'
-    DEFAULT_CAMERA_PARAMS_NAME = 'camera_params.txt'
+    DEFAULT_CAMERA_POSE_NAME = 'camera_extrinsics.txt'
+    DEFAULT_CAMERA_PARAMS_NAME = 'camera_intrisics.txt'
 
-    def __init__(self, scene_path='#', image_topic_name='aaa', robot_pose_name='#', camera_intrisics_file='', camera_extrinsics_file=''):
+    def __init__(self, scene_path='#', images_path='aaa', robot_pose_name='#', camera_intrisics_file='', camera_extrinsics_file='', relative_path=None):
         self.classes = {}
         self.scene_path = scene_path
-        self.image_topic_name = image_topic_name
+        self.images_path = images_path
         self.robot_pose_name = robot_pose_name
         self.image_filenames_lists = []
         self.robot_to_camera_pose = [0, 0, 0, 0, 0, 0, 1]
@@ -163,13 +163,22 @@ class TrainingScene(object):
         }
         self.robot_poses = []
         self.initialized = False
+        self.relative_path = relative_path
+
+    def setRelativePath(self, filename):
+        self.relative_path = os.path.dirname(filename)
+
+    def initFromManifest(self, manifest_file):
+        if not self.scene_path.startswith('/'):
+            self.setRelativePath(manifest_file)
+            self.scene_path = os.path.join(self.relative_path, self.scene_path)
 
     def initialize(self):
         ''' Initializes the Scene searching for Images and camera poses '''
 
         #⬢⬢⬢⬢⬢➤ Checks for Scene path
         if os.path.exists(self.scene_path):
-            images_path = os.path.join(self.scene_path, self.image_topic_name)
+            images_path = os.path.join(self.scene_path, self.images_path)
         else:
             print("Scene path doesn't exist: {}".format(self.scene_path))
             return
@@ -226,10 +235,11 @@ class TrainingScene(object):
             return
 
         #⬢⬢⬢⬢⬢➤ Stores images paths A-Z
-        for f in sorted(files):
-            full_path = os.path.join(
-                self.scene_path, self.image_topic_name, f)
-            self.image_filenames_lists.append(full_path)
+        # for f in sorted(files):
+        #     full_path = os.path.join(
+        #         self.scene_path, self.image_topic_name, f)
+        #     self.image_filenames_lists.append(full_path)
+        self.image_filenames_lists = sorted(files)
 
         #⬢⬢⬢⬢⬢➤ Checks for Robot poses path
         robot_pose_path = os.path.join(
@@ -270,12 +280,19 @@ class TrainingScene(object):
         return os.path.basename(self.scene_path)
 
     def setClasses(self, classes):
+        temp_instances = self.getAllInstances()
         temp_classes = collections.OrderedDict(
             sorted(classes.items())
         )
         self.classes = {}
         for k, v in temp_classes.iteritems():
             self.classes[int(k)] = v
+        for inst in temp_instances:
+            if inst.label in self.classes:
+                self.classes[inst.label].instances.append(inst)
+            else:
+                if -1 in self.classes:
+                    self.classes[-1].instances.append(inst)
 
     def clearInstances(self):
         for k, ti in self.classes.iteritems():
@@ -285,11 +302,6 @@ class TrainingScene(object):
         self.clearInstances()
         for inst in instances:
             self.getTrainingClass(inst.label).addInstances([inst])
-
-    def getTrainingClass(self, label):
-        if label in self.classes:
-            return self.classes[label]
-        return None
 
     def getClassesAsList(self):
         return TrainingClassesMap.transformClassesInStringList(self.classes)
@@ -303,9 +315,13 @@ class TrainingScene(object):
     def classesNumber(self):
         return len(self.classes)
 
-    def getTrainingClass(self, index):
+    def getTrainingClass(self, index, force_creation=False):
         if index in self.classes:
             return self.classes[index]
+        else:
+            if force_creation:
+                self.classes[index] = TrainingClass(label=-1)
+                return self.getTrainingClass(index)
         if str(index) in self.classes:
             return self.classes[str(index)]
 
@@ -329,7 +345,7 @@ class TrainingScene(object):
 
     def getImagePath(self, index):
         index = index % self.size()
-        return self.image_filenames_lists[index]
+        return os.path.join(self.scene_path, self.images_path, self.image_filenames_lists[index])
 
     def getFrameByIndex(self, index):
         return TrainingFrame(scene=self, internal_index=index)
@@ -357,7 +373,16 @@ class TrainingScene(object):
     def size(self):
         return len(self.image_filenames_lists)
 
-    def save(self, filename):
+    def save(self, filename, force_relative=False):
+        if force_relative:
+            self.setRelativePath(filename)
+
+        #⬢⬢⬢⬢⬢➤ Remove Relative Path if any
+        if self.relative_path != None:
+            self.scene_path = os.path.relpath(
+                self.scene_path, self.relative_path)
+
+        #⬢⬢⬢⬢⬢➤ Save
         scene_js = json.dumps(
             self,
             cls=CustomJSONEncoder,
@@ -365,6 +390,10 @@ class TrainingScene(object):
         )
         with open(filename, "w") as outfile:
             outfile.write(scene_js)
+
+        #⬢⬢⬢⬢⬢➤ Restore relative path if any
+        if self.relative_path != None:
+            self.scene_path = os.path.join(self.relative_path, self.scene_path)
 
     def validateImport(self):
         self.setClasses(self.classes)
@@ -377,6 +406,7 @@ class TrainingScene(object):
             if not isinstance(sc, TrainingScene):
                 return None
             sc.validateImport()
+            sc.initFromManifest(filename)
             return sc
         except ValueError, e:
             return None

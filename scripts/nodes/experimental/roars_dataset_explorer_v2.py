@@ -92,6 +92,7 @@ class MainWindow(PyQtWindow):
             for dirs in self.frame_relative_movements_dirs:
                 ui_name = "ui_button_frame_rel_{}_{}".format(coord, dirs)
                 getattr(self, ui_name).clicked.connect(self.frameValuesChanged)
+                getattr(self, ui_name).setAutoRepeat(True)
 
         #⬢⬢⬢⬢⬢➤ Classes Management
         self.temporary_class_map = None
@@ -116,6 +117,7 @@ class MainWindow(PyQtWindow):
             self.showDialog("Scene file is corrupted!")
             sys.exit(0)
 
+        # scene.initialize(scene_manifest_file)
         #⬢⬢⬢⬢⬢➤ Init
         self.scene = scene
         self.frames = scene.getAllFrames()
@@ -378,7 +380,7 @@ class MainWindow(PyQtWindow):
             x[0], x[1], x[2] - ps * 0.5
         )
 
-        training_class = self.scene.getTrainingClass(-1)
+        training_class = self.scene.getTrainingClass(-1, force_creation=True)
         inst = TrainingInstance(frame=frame, size=[ps, ps, ps])
         training_class.instances.append(inst)
 
