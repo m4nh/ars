@@ -153,7 +153,11 @@ class RosNode(object):
     def setupParameter(self, parameter_name, default_value, type=RosParamType.PRIVATE_PARAM, array_type=None):
         par = self.getRosParameter(parameter_name, default_value, type=type)
         if array_type != None:
-            par = map(array_type, par.split(";"))
+            splits_characters = [';','x']
+            for sp in splits_characters:
+                if sp in par:
+                    par = map(array_type, par.split(sp))
+                    break
         self._parameters[parameter_name] = par
         return par
 

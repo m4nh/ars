@@ -174,10 +174,12 @@ class WSceneFrameVisualizer(WBaseWidget):
             self.drawInstances(display_image)
 
             pix = PyQtImageConverter.cvToQPixmap(display_image)
-            pix = pix.scaled(self.ui_image.size(), QtCore.Qt.KeepAspectRatio)
+
+            pix = pix.scaled(self.ui_image.size().width()-5,self.ui_image.size().height()-1, QtCore.Qt.KeepAspectRatio)
+
             self.ui_image.setAlignment(QtCore.Qt.AlignCenter)
             self.ui_image.setPixmap(pix)
-
+            
             self.ui_label_current_frame.setText(
                 "F[{}]".format(self.current_frame_index + 1))
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>372</width>
-    <height>144</height>
+    <width>580</width>
+    <height>304</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -24,7 +24,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0,0,0">
+    <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="2,8">
      <property name="spacing">
       <number>15</number>
      </property>
@@ -37,10 +37,16 @@
      <item>
       <widget class="QLabel" name="ui_label_x">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>450000</width>
+         <height>16777215</height>
+        </size>
        </property>
        <property name="text">
         <string>Axis_x</string>
@@ -48,45 +54,25 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="ui_button_x_minus">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>-</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QDoubleSpinBox" name="ui_spin_x">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="ui_button_x_plus">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
+       <property name="accelerated">
+        <bool>true</bool>
        </property>
-       <property name="text">
-        <string>+</string>
+       <property name="decimals">
+        <number>3</number>
        </property>
       </widget>
      </item>
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,0,0">
+    <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="2,8">
      <property name="spacing">
       <number>15</number>
      </property>
@@ -104,21 +90,14 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="maximumSize">
+        <size>
+         <width>450000</width>
+         <height>16777215</height>
+        </size>
+       </property>
        <property name="text">
         <string>Axis_y</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="ui_button_y_minus">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>-</string>
        </property>
       </widget>
      </item>
@@ -130,25 +109,18 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="ui_button_y_plus">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
+       <property name="accelerated">
+        <bool>true</bool>
        </property>
-       <property name="text">
-        <string>+</string>
+       <property name="decimals">
+        <number>3</number>
        </property>
       </widget>
      </item>
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="2,8">
      <property name="spacing">
       <number>15</number>
      </property>
@@ -159,28 +131,21 @@
       <number>2</number>
      </property>
      <item>
-      <widget class="QLabel" name="label_z">
+      <widget class="QLabel" name="ui_label_z">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>450000</width>
+         <height>16777215</height>
+        </size>
        </property>
        <property name="text">
         <string>Axis_x</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="ui_button_z_minus">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>-</string>
        </property>
       </widget>
      </item>
@@ -192,18 +157,14 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="ui_button_z_plus">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
+       <property name="accelerated">
+        <bool>true</bool>
        </property>
-       <property name="text">
-        <string>+</string>
+       <property name="suffix">
+        <string/>
+       </property>
+       <property name="decimals">
+        <number>3</number>
        </property>
       </widget>
      </item>

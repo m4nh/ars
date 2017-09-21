@@ -287,6 +287,7 @@ class TrainingScene(object):
         self.classes = {}
         for k, v in temp_classes.iteritems():
             self.classes[int(k)] = v
+            self.classes[int(k)].clearInstances()
         for inst in temp_instances:
             if inst.label in self.classes:
                 self.classes[inst.label].instances.append(inst)
@@ -569,6 +570,14 @@ class TrainingInstance(PyKDL.Frame):
     def setSize(self, sx, sy, sz):
         self.size = np.array([sx, sy, sz])
 
+    def grows(self, label,delta):
+        if label == 'x':
+            self.grow(delta,0.0,0.0)
+        if label == 'y':
+            self.grow(0.0,delta,0.0)
+        if label == 'z':
+            self.grow(0.0,0.0,delta)
+
     def grow(self, sx, sy, sz):
         self.size = self.size + np.array([sx, sy, sz])
 
@@ -586,7 +595,15 @@ class TrainingInstance(PyKDL.Frame):
         if name == 'yaw':
             self.setRPY(None, None, value)
 
-    def relativeTranslation(self, x, y, z):
+    def relativeTranslations(self,label,delta):
+        if label == 'x':
+            self.relativeTranslation(x=delta)
+        if label == 'y':
+            self.relativeTranslation(y=delta)
+        if label == 'z':
+            self.relativeTranslation(z=delta)
+
+    def relativeTranslation(self, x=None, y=None, z=None):
         x = x if x != None else 0.0
         y = y if y != None else 0.0
         z = z if z != None else 0.0
@@ -611,6 +628,16 @@ class TrainingInstance(PyKDL.Frame):
             return self.getRPY()[1]
         if name == 'yaw':
             return self.getRPY()[2]
+
+    def getFrameProperties(self):
+        return {
+            'cx': self.p.x(),
+            'cy': self.p.y(),
+            'cz': self.p.z(),
+            'roll': self.getRPY()[0],
+            'pitch': self.getRPY()[1],
+            'yaw': self.getRPY()[2]
+        }
 
     def toJSON(self):
         data = {}

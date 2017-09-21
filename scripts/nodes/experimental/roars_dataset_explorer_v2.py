@@ -6,7 +6,9 @@ from roars.rosutils.rosnode import RosNode
 from roars.datasets.datasetutils import JSONHelper
 from roars.gui.pyqtutils import PyQtWindow, PyQtImageConverter, PyQtWidget
 from roars.gui.widgets.WBaseWidget import WBaseWidget
+from roars.gui.widgets.WInstanceEditor import WInstanceEditor
 from roars.gui.widgets.WSceneFrameVisualizer import WSceneFrameVisualizer
+from roars.gui.widgets.WAxesEditor import WAxesEditor
 from roars.vision.augmentereality import VirtualObject
 import roars.vision.cvutils as cvutils
 import roars.geometry.lines as lines
@@ -25,6 +27,7 @@ import math
 
 #⬢⬢⬢⬢⬢➤ NODE
 node = RosNode("roars_dataset_explorer_v2")
+window_size= node.setupParameter("window_size","1400;900",array_type=int)
 
 scene_manifest_file = node.setupParameter("scene_manifest_file", '')
 
@@ -38,6 +41,8 @@ class MainWindow(PyQtWindow):
     def __init__(self, uifile):
         super(MainWindow, self).__init__(uifile)
 
+        #self.showMaximized()
+        self.setFixedSize( window_size[0],window_size[1])
         #⬢⬢⬢⬢⬢➤ Scene Management
         self.scene_filename = ''
         self.scene = None
@@ -68,6 +73,10 @@ class MainWindow(PyQtWindow):
         self.ui_button_randomize_views.clicked.connect(
             self.randomizeVisualizers)
 
+
+        self.ui_instance_editor = WInstanceEditor(changeCallback=self.refresh)
+        self.ui_test_layout.addWidget(self.ui_instance_editor)
+
         #⬢⬢⬢⬢⬢➤ Instances_management
         self.ui_button_create_from_boxes.clicked.connect(
             self.createInstancesFromBoxes
@@ -75,24 +84,23 @@ class MainWindow(PyQtWindow):
         self.ui_button_load_raw_objects.clicked.connect(
             self.loadRawObjects
         )
-        self.ui_combo_frame_classes.currentIndexChanged.connect(
-            self.comboBoxChanged
-        )
-        self.temporary_instances = []
-        self.selected_instance = -1
-        self.frame_coordinates_attributes = {
-            "cx": 1, "cy": 1, "cz": 1, "roll": np.pi / 180.0, "pitch": np.pi / 180.0, "yaw": np.pi / 180.0}
-        for attr, _ in self.frame_coordinates_attributes.iteritems():
-            name = "ui_spin_frame_{}".format(attr)
-            getattr(self, name).valueChanged.connect(self.frameValuesChanged)
+        
+        
+        # self.temporary_instances = []
+        # self.selected_instance = -1
+        # self.frame_coordinates_attributes = {
+        #     "cx": 1, "cy": 1, "cz": 1, "roll": np.pi / 180.0, "pitch": np.pi / 180.0, "yaw": np.pi / 180.0}
+        # for attr, _ in self.frame_coordinates_attributes.iteritems():
+        #     name = "ui_spin_frame_{}".format(attr)
+        #     getattr(self, name).valueChanged.connect(self.frameValuesChanged)
 
-        self.frame_relative_movements = ["x", "y", "z"]
-        self.frame_relative_movements_dirs = ["plus", "minus"]
-        for coord in self.frame_relative_movements:
-            for dirs in self.frame_relative_movements_dirs:
-                ui_name = "ui_button_frame_rel_{}_{}".format(coord, dirs)
-                getattr(self, ui_name).clicked.connect(self.frameValuesChanged)
-                getattr(self, ui_name).setAutoRepeat(True)
+        # self.frame_relative_movements = ["x", "y", "z"]
+        # self.frame_relative_movements_dirs = ["plus", "minus"]
+        # for coord in self.frame_relative_movements:
+        #     for dirs in self.frame_relative_movements_dirs:
+        #         ui_name = "ui_button_frame_rel_{}_{}".format(coord, dirs)
+        #         getattr(self, ui_name).clicked.connect(self.frameValuesChanged)
+        #         getattr(self, ui_name).setAutoRepeat(True)
 
         #⬢⬢⬢⬢⬢➤ Classes Management
         self.temporary_class_map = None
@@ -103,6 +111,8 @@ class MainWindow(PyQtWindow):
         #⬢⬢⬢⬢⬢➤ Storage Management
         self.ui_button_save.clicked.connect(self.save)
 
+    def testChange(self,data):
+        print("CHANGE",data)
     def initScene(self, scene_filename=''):
         self.scene_filename = scene_filename
 
@@ -117,7 +127,6 @@ class MainWindow(PyQtWindow):
             self.showDialog("Scene file is corrupted!")
             sys.exit(0)
 
-        # scene.initialize(scene_manifest_file)
         #⬢⬢⬢⬢⬢➤ Init
         self.scene = scene
         self.frames = scene.getAllFrames()
@@ -126,11 +135,13 @@ class MainWindow(PyQtWindow):
         if len(self.scene.classes) > 0:
             self.updateClassLists(scene.classes)
             self.setInstances(scene.getAllInstances())
+            pass
 
-        self.refresh()
+        
 
         self.initSceneForVisualizers(scene)
         self.randomizeVisualizers()
+
         QtCore.QTimer.singleShot(200, self.refreshVisualizers)
 
     def resizeEvent(self, event):
@@ -173,43 +184,8 @@ class MainWindow(PyQtWindow):
         except:
             return None
 
-    def frameValuesChanged(self,  v):
-        inst = self.getSelectedInstance()
-        if inst != None:
-            obj_name = self.sender().objectName()
-
-            if 'rel' in obj_name:
-                mag = 0.001
-                direction = 1 if 'plus' in obj_name else -1
-                # component = str(obj_name.split('rel_')[1].split('_')[0])
-                # dx = direction * mag if 'x' in obj_name else 0
-                # dy = direction * mag if 'y' in obj_name else 0
-                # dz = direction * mag if 'z' in obj_name else 0
-                # inst.relativeTranslation(dx, dy, dz)
-                # self.updateInstanceValues(inst)
-
-                dx = direction * mag if 'x' in obj_name else 0
-                dy = direction * mag if 'y' in obj_name else 0
-                dz = direction * mag if 'z' in obj_name else 0
-                inst.grow(dx, dy, dz)
-                self.updateInstanceValues(inst)
-
-            else:
-                for attr, conv in self.frame_coordinates_attributes.iteritems():
-                    if attr in obj_name:
-                        inst.setFrameProperty(attr, v * conv)
-
-            self.refresh()
-
     def updateClassLists(self, class_map):
-        self.updateListWithClassesMap(
-            self.ui_list_classes,
-            class_map
-        )
-        self.updateListWithClassesMap(
-            self.ui_combo_frame_classes,
-            class_map
-        )
+        self.ui_instance_editor.setClassMap(class_map)
 
     def setClassMap(self, class_map):
         self.scene.setClasses(class_map.getClasses())
@@ -270,7 +246,7 @@ class MainWindow(PyQtWindow):
 
     def refreshInstacesList(self, instances):
         list_model = QStandardItemModel(self.ui_listm_instances)
-
+        list_model.clear()
         for i in range(0, len(instances)):
             inst = instances[i]
             item = QStandardItem()
@@ -292,14 +268,13 @@ class MainWindow(PyQtWindow):
             getattr(self, name).setValue(
                 instance.getFrameProperty(attr) / conv)
 
-        self.ui_combo_frame_classes.setCurrentIndex(instance.label + 1)
+       
 
     def selectInstance(self, index):
         self.selected_instance = index
         if self.selected_instance >= 0:
             inst = self.temporary_instances[index]
-            inst_rpy = inst.getRPY()
-            self.updateInstanceValues(inst)
+            self.ui_instance_editor.setInstance(inst)
             for ui in self.ui_scene_visualizers_list:
                 ui.setSelectedInstance(inst)
 
