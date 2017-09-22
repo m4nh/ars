@@ -8,6 +8,7 @@ from roars.gui.pyqtutils import PyQtWindow, PyQtImageConverter, PyQtWidget
 from roars.gui.widgets.WBaseWidget import WBaseWidget
 from roars.gui.widgets.WInstanceEditor import WInstanceEditor
 from roars.gui.widgets.WSceneFrameVisualizer import WSceneFrameVisualizer
+from roars.gui.widgets.WInstanceCreator import WInstanceCreator
 from roars.gui.widgets.WAxesEditor import WAxesEditor
 from roars.vision.augmentereality import VirtualObject
 import roars.vision.cvutils as cvutils
@@ -24,15 +25,20 @@ import numpy as np
 import functools
 import sys
 import math
+import re
+
 
 #⬢⬢⬢⬢⬢➤ NODE
 node = RosNode("roars_dataset_explorer_v2")
-window_size= node.setupParameter("window_size","1400;900",array_type=int)
+window_size = node.setupParameter("window_size", "1400;900", array_type=int)
 
 scene_manifest_file = node.setupParameter("scene_manifest_file", '')
 
 WBaseWidget.DEFAULT_UI_WIDGETS_FOLDER = node.getFileInPackage(
     'roars', 'data/gui_forms/widgets'
+)
+PyQtWindow.DEFAULT_IMAGES_PATH = node.getFileInPackage(
+    'roars', 'data/gui_forms/images'
 )
 
 
@@ -41,8 +47,8 @@ class MainWindow(PyQtWindow):
     def __init__(self, uifile):
         super(MainWindow, self).__init__(uifile)
 
-        #self.showMaximized()
-        self.setFixedSize( window_size[0],window_size[1])
+        # self.showMaximized()
+        self.setFixedSize(window_size[0], window_size[1])
         #⬢⬢⬢⬢⬢➤ Scene Management
         self.scene_filename = ''
         self.scene = None
@@ -73,34 +79,23 @@ class MainWindow(PyQtWindow):
         self.ui_button_randomize_views.clicked.connect(
             self.randomizeVisualizers)
 
-
+        # Instance Editor
         self.ui_instance_editor = WInstanceEditor(changeCallback=self.refresh)
         self.ui_test_layout.addWidget(self.ui_instance_editor)
 
-        #⬢⬢⬢⬢⬢➤ Instances_management
-        self.ui_button_create_from_boxes.clicked.connect(
-            self.createInstancesFromBoxes
+        # Instance Creator
+        self.ui_instance_creator = WInstanceCreator(
+            scene=self.scene,
+            changeCallback=self.creatorCallback
         )
+        self.ui_test_layout.addWidget(self.ui_instance_creator)
+        for sv in self.ui_scene_visualizers_list:
+            sv.addDrawerCallback(self.ui_instance_creator.addRawData)
+
+        #⬢⬢⬢⬢⬢➤ Instances_management
         self.ui_button_load_raw_objects.clicked.connect(
             self.loadRawObjects
         )
-        
-        
-        # self.temporary_instances = []
-        # self.selected_instance = -1
-        # self.frame_coordinates_attributes = {
-        #     "cx": 1, "cy": 1, "cz": 1, "roll": np.pi / 180.0, "pitch": np.pi / 180.0, "yaw": np.pi / 180.0}
-        # for attr, _ in self.frame_coordinates_attributes.iteritems():
-        #     name = "ui_spin_frame_{}".format(attr)
-        #     getattr(self, name).valueChanged.connect(self.frameValuesChanged)
-
-        # self.frame_relative_movements = ["x", "y", "z"]
-        # self.frame_relative_movements_dirs = ["plus", "minus"]
-        # for coord in self.frame_relative_movements:
-        #     for dirs in self.frame_relative_movements_dirs:
-        #         ui_name = "ui_button_frame_rel_{}_{}".format(coord, dirs)
-        #         getattr(self, ui_name).clicked.connect(self.frameValuesChanged)
-        #         getattr(self, ui_name).setAutoRepeat(True)
 
         #⬢⬢⬢⬢⬢➤ Classes Management
         self.temporary_class_map = None
@@ -111,8 +106,9 @@ class MainWindow(PyQtWindow):
         #⬢⬢⬢⬢⬢➤ Storage Management
         self.ui_button_save.clicked.connect(self.save)
 
-    def testChange(self,data):
-        print("CHANGE",data)
+    def testChange(self, data):
+        print("CHANGE", data)
+
     def initScene(self, scene_filename=''):
         self.scene_filename = scene_filename
 
@@ -137,8 +133,6 @@ class MainWindow(PyQtWindow):
             self.setInstances(scene.getAllInstances())
             pass
 
-        
-
         self.initSceneForVisualizers(scene)
         self.randomizeVisualizers()
 
@@ -159,6 +153,17 @@ class MainWindow(PyQtWindow):
     def refreshVisualizers(self):
         for ui in self.ui_scene_visualizers_list:
             ui.refresh()
+
+    def creatorCallback(self, data):
+        if data[1] == "ENABLE_EDITING":
+            for ui in self.ui_scene_visualizers_list:
+                ui.enableInteraction()
+        elif data[1] == "DISABLE_EDITING":
+            for ui in self.ui_scene_visualizers_list:
+                ui.enableInteraction(False)
+        elif data[1] == "NEW_INSTANCE":
+            print("NEW ISNTANCE", data[2])
+            self.createNewInstance(data[2])
 
     def save(self):
         if self.showPromptBool(title='Saving Scene', message='Are you sure?'):
@@ -268,8 +273,6 @@ class MainWindow(PyQtWindow):
             getattr(self, name).setValue(
                 instance.getFrameProperty(attr) / conv)
 
-       
-
     def selectInstance(self, index):
         self.selected_instance = index
         if self.selected_instance >= 0:
@@ -297,74 +300,16 @@ class MainWindow(PyQtWindow):
         self.current_image = cv2.imread(self.current_frame.getImagePath())
         self.refresh()
 
-    def drawInstances(self, img):
-        for i in range(0, len(self.temporary_instances)):
-            inst = self.temporary_instances[i]
-            vo = VirtualObject(frame=inst, size=inst.size,
-                               label=inst.label)
-            thick = 1 if self.selected_instance != i else 4
-
-            color = TrainingClass.getColorByLabel(
-                inst.label, output_type="RGB")
-
-            vo.draw(
-                img,
-                camera_frame=self.current_frame.getCameraPose(),
-                camera=self.scene.camera_params,
-                thickness=thick,
-                color=color
-            )
-
     def refresh(self):
         self.refreshVisualizers()
 
-        # display_image = self.current_image.copy()
-        # self.drawInstances(display_image)
-
-        # pix = PyQtImageConverter.cvToQPixmap(display_image)
-        # pix = pix.scaled(self.image.size(), QtCore.Qt.KeepAspectRatio)
-        # self.image.setAlignment(QtCore.Qt.AlignCenter)
-        # self.image.setPixmap(pix)
-
-        # self.label_current_frame.setText(
-        #     "Current Frame: {}".format(self.current_frame_index + 1))
-
-    def getPos(self, event):
-        x = event.pos().x()
-        y = event.pos().y()
-        print(x, y)
-
-    def temp(self, v):
-        print(self.ui_list_classes.itemText(v))
-
-    def test(self):
-        print("ok")
-
-    def createInstancesFromBoxes(self):
-        x = lines.lineLineIntersection(self.scene_visualizers_points)
-        pp = self.ui_scene_visualizers_list[1].debugComputePointInCameraFrame(
-            x)
-        d = pp[2]
-        sx = math.fabs(
-            self.scene_visualizers_boxes[0][1][0] - self.scene_visualizers_boxes[0][0][0])
-
-        ps = 0.8 * sx / 600 * d
-
-        frame = PyKDL.Frame()
-        frame.p = PyKDL.Vector(
-            x[0], x[1], x[2] - ps * 0.5
-        )
-
+    def createNewInstance(self, data):
         training_class = self.scene.getTrainingClass(-1, force_creation=True)
-        inst = TrainingInstance(frame=frame, size=[ps, ps, ps])
+        inst = TrainingInstance(frame=data["frame"], size=data["size"])
         training_class.instances.append(inst)
 
         self.setInstances(self.scene.getAllInstances())
         self.refresh()
-        self.ui_scene_visualizers_list[1].clearClickedPoints()
-        self.ui_scene_visualizers_list[2].clearClickedPoints()
-        self.scene_visualizers_points = []
-        self.scene_visualizers_boxes = []
 
     def frameClickedPointCallback(self, frame, data, action):
         if action == 'ADD':

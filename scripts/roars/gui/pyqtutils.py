@@ -8,6 +8,7 @@ from PyQt4.QtCore import *
 import sys
 import signal
 import numpy as np
+import random
 
 #######################################################################
 #######################################################################
@@ -97,12 +98,21 @@ class PyQtWidget(QtGui.QWidget):
 
 
 class PyQtWindow(QtGui.QMainWindow):
+    DEFAULT_IMAGES_PATH = ''
+
     def __init__(self, uifile):
         self.qt_application = QApplication(sys.argv)
         super(PyQtWindow, self).__init__()
         uic.loadUi(uifile, self)
 
         signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+        # REPLACE STylesheet with custom paths
+        stylesheet = str(self.styleSheet())
+        stylesheet = stylesheet.replace(
+            "/home/daniele/work/ros/roars_ws/src/roars/data/gui_forms/images/", PyQtWindow.DEFAULT_IMAGES_PATH + '/')
+        self.setStyleSheet(stylesheet)
+        print stylesheet
 
     def run(self):
         self.show()

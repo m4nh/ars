@@ -37,7 +37,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Instance</string>
+      <string>Edit Selected Instance</string>
      </property>
     </widget>
    </item>

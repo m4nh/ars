@@ -1,6 +1,7 @@
 from roars.vision.augmentereality import VirtualObject
 from roars.datasets.datasetutils import TrainingClass
 from roars.gui.pyqtutils import PyQtWidget, PyQtImageConverter
+import roars.vision.colors as colors
 from WBaseWidget import WBaseWidget
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
@@ -11,9 +12,72 @@ import random
 import PyKDL
 
 
+class MouseDrawer(object):
+
+    def __init__(self, widget, namespace='generic', callback=None):
+        self.parent = widget
+        self.namespace = namespace
+        self.callback = callback
+
+    def relativeCoordinates(self, evt):
+        return self.parent.imageCoordinatesFromFrameCoordinates(
+            evt.x(), evt.y())
+
+    def getCurrentData(self):
+        return (self.namespace, None)
+
+    def reset(self):
+        pass
+
+
+class MouseBoxDrawer(MouseDrawer):
+    DEFAULT_BOX_COLOR = (249, 202, 144)
+    DEFAULT_BOX_EDGES_COLOR = (243, 150, 33)
+
+    def __init__(self, widget, namespace='', callback=None):
+        super(MouseBoxDrawer, self).__init__(widget, namespace, callback)
+        self.p1 = None
+        self.p2 = None
+
+    def reset(self):
+        self.p1 = self.p2 = None
+
+    def manageClick(self, evt):
+        if evt.button() == 1:
+            pos = self.relativeCoordinates(evt)
+            self.p1 = pos
+            self.p2 = None
+        if evt.button() == 2:
+            self.p1 = self.p2 = None
+
+    def manageMouseMove(self, evt):
+        pos = self.relativeCoordinates(evt)
+        if self.p1 != None:
+            self.p2 = pos
+
+    def manageMouseRelease(self, evt):
+        if self.p1 != None and self.p2 != None:
+            if self.callback != None:
+                self.callback(self.getCurrentData())
+
+    def drawGizmo(self, image):
+        if self.p1 != None and self.p2 != None:
+            cv2.rectangle(image, self.p1, self.p2,
+                          MouseBoxDrawer.DEFAULT_BOX_COLOR, 2)
+            cv2.circle(image, self.p1, 5,
+                       MouseBoxDrawer.DEFAULT_BOX_EDGES_COLOR, -1)
+            cv2.circle(image, self.p2, 5,
+                       MouseBoxDrawer.DEFAULT_BOX_EDGES_COLOR, -1)
+
+    def getCurrentData(self):
+        if self.p1 != None and self.p2 != None:
+            return {'type': self.namespace, 'rect': (self.p1, self.p2)}
+        return super.getCurrentData()
+
+
 class WSceneFrameVisualizer(WBaseWidget):
 
-    def __init__(self):
+    def __init__(self, frame_steps=5):
         super(WSceneFrameVisualizer, self).__init__(
             'ui_scene_frame_visualizer'
         )
@@ -28,66 +92,57 @@ class WSceneFrameVisualizer(WBaseWidget):
         self.current_image_gizmo = np.zeros((50, 50))
         self.ui_button_next_frame.clicked.connect(self.nextFrame)
         self.ui_button_prev_frame.clicked.connect(self.prevFrame)
+        self.ui_spin_frame_step.setValue(frame_steps)
 
         self.ui_image.mousePressEvent = self.mousePressEvent
         self.ui_image.mouseMoveEvent = self.mouseMoveEvent
-        self.mousePressCallback = None
-        self.enable_click_feedback = True
-        self.dragging = False
+        self.ui_image.mouseReleaseEvent = self.mouseReleaseEvent
 
-        self.ui_spin_frame_step.setValue(5)
-        # DEBUG
-        self.clicked_points = []
+        # Interaction
+        self.enable_interaction = False
+        self.current_drawer = MouseBoxDrawer(self, 'BOX', self.drawerCallback)
+        self.drawer_callbacks = []
 
-    def clearClickedPoints(self):
-        self.clicked_points = []
-        self.updateCurrentFrame()
+    def enableInteraction(self, status=True):
+        self.enable_interaction = status
+        if self.current_drawer != None:
+            self.current_drawer.reset()
+        self.refresh()
+
+    def addDrawerCallback(self, cb):
+        self.drawer_callbacks.append(cb)
+
+    def clearDrawerCallbacks(self):
+        self.drawer_callbacks = []
+
+    def drawerCallback(self, data):
+        data['camera_pose'] = self.current_frame.getCameraPose()
+        data['camera_matrix_inv'] = self.scene.camera_params.camera_matrix_inv
+        data['camera_matrix'] = self.scene.camera_params.camera_matrix
+        for c in self.drawer_callbacks:
+            c(data)
+
+    def mouseReleaseEvent(self, evt):
+        if self.enable_interaction:
+            if self.current_drawer != None:
+                self.current_drawer.manageMouseRelease(evt)
 
     def mouseMoveEvent(self, evt):
-        pos = self.imageCoordinatesFromFrameCoordinates(evt.x(), evt.y())
-        if len(self.clicked_points) == 1:
-            self.current_image_gizmo = self.current_image.copy()
-            cv2.rectangle(
-                self.current_image_gizmo, self.clicked_points[0], pos, (249, 202, 144), 2)
-            cv2.circle(self.current_image_gizmo,
-                       self.clicked_points[0], 5, (243, 150, 33), -1)
-            cv2.circle(self.current_image_gizmo, pos, 5, (243, 150, 33), -1)
-            self.refresh()
+        if self.enable_interaction:
+            if self.current_drawer != None:
+                self.current_drawer.manageMouseMove(evt)
+
+        self.refresh()
 
     def mousePressEvent(self, evt):
-        # print 'click', evt.button(), evt.x(), evt.y()
-        # pos = self.imageCoordinatesFromFrameCoordinates(evt.x(), evt.y())
-        # if self.enable_click_feedback:
-        #     if evt.button() == 1:
-        #         cv2.circle(self.current_image, pos, 5, (0, 255, 255), -1)
-        #         self.refresh()
-        #         if self.mousePressCallback != None:
-        #             self.mousePressCallback(
-        #                 self.current_frame, pos, action='ADD')
-        print 'click', evt.button(), evt.x(), evt.y()
-        pos = self.imageCoordinatesFromFrameCoordinates(evt.x(), evt.y())
-        if self.enable_click_feedback:
-            if evt.button() == 1:
-                self.current_image_gizmo = self.current_image.copy()
-                self.clicked_points.append(pos)
+        if self.enable_interaction:
+            if self.current_drawer != None:
+                self.current_drawer.manageClick(evt)
 
-                if len(self.clicked_points) == 2:
-
-                    cv2.rectangle(
-                        self.current_image_gizmo, self.clicked_points[0], pos, (243, 150, 33), 2)
-                    cv2.circle(self.current_image_gizmo,
-                               self.clicked_points[0], 4, (243, 150, 33), -1)
-                    cv2.circle(self.current_image_gizmo,
-                               pos, 4, (243, 150, 33), -1)
-                    self.refresh()
-                    if self.mousePressCallback != None:
-                        self.mousePressCallback(
-                            self.current_frame, (self.clicked_points[0], self.clicked_points[1]), action='ADD_BOX')
-
-                #cv2.circle(self.current_image_gizmo, pos, 5, (0, 255, 255), -1)
-                self.refresh()
+        self.refresh()
 
     def imageCoordinatesFromFrameCoordinates(self, x, y, tp=int):
+        # TODO: move this function in utilities
         img_size = self.current_image.shape
         img_w = float(img_size[1])
         img_h = float(img_size[0])
@@ -105,8 +160,6 @@ class WSceneFrameVisualizer(WBaseWidget):
         img_x = inner_x * img_w
         img_y = inner_y * img_h
 
-        print img_size, (frame_w, frame_h), h_ratio, img_reduced_w, w_padding
-        print img_x, img_y
         return (tp(img_x), tp(img_y))
 
     def setSelectedInstance(self, instance):
@@ -166,20 +219,42 @@ class WSceneFrameVisualizer(WBaseWidget):
                     color=color
                 )
 
+    def drawLabel(self, image, label, color=colors.getColor('green')):
+        height = 40
+        width = 150
+        cv2.rectangle(image, (0, 0), (width, height), color, -1)
+        cv2.putText(image, label, (10, height - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
     def refresh(self):
         if self.scene:
+            self.current_image_gizmo = self.current_image.copy()
+
+            if self.enable_interaction:
+                self.drawLabel(self.current_image_gizmo, "EDITABLE")
+
+            if self.current_drawer != None:
+
+                self.current_drawer.drawGizmo(self.current_image_gizmo)
+
             display_image = cv2.cvtColor(
-                self .current_image_gizmo, cv2.COLOR_BGR2RGB)
+                self.current_image_gizmo,
+                cv2.COLOR_BGR2RGB
+            )
 
             self.drawInstances(display_image)
 
             pix = PyQtImageConverter.cvToQPixmap(display_image)
 
-            pix = pix.scaled(self.ui_image.size().width()-5,self.ui_image.size().height()-1, QtCore.Qt.KeepAspectRatio)
+            pix = pix.scaled(
+                self.ui_image.size().width() - 5,
+                self.ui_image.size().height() - 1,
+                QtCore.Qt.KeepAspectRatio
+            )
 
             self.ui_image.setAlignment(QtCore.Qt.AlignCenter)
             self.ui_image.setPixmap(pix)
-            
+
             self.ui_label_current_frame.setText(
                 "F[{}]".format(self.current_frame_index + 1))
 
