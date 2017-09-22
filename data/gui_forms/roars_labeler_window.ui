@@ -42,12 +42,7 @@ QPushButton:hover
    border:none;
 }
 QGroupBox{
-	font: 25 14pt &quot;Ubuntu&quot;;
-	color:white;
-	font-size: 11pt ;
-	border:0px solid #aaaaaa;
-   border-top:1px solid #eeeeee;
-	padding:15px 5px 15px 5px;
+	
 }
 
 QDoubleSpinBox,QSpinBox{
@@ -104,7 +99,7 @@ QComboBox::drop-down {
    </property>
    <layout class="QGridLayout" name="gridLayout_4">
     <item row="0" column="0">
-     <layout class="QHBoxLayout" name="main_layout" stretch="8,3">
+     <layout class="QHBoxLayout" name="main_layout" stretch="4,1">
       <item>
        <widget class="QTabWidget" name="ui_main_tab">
         <property name="sizePolicy">
@@ -115,6 +110,9 @@ QComboBox::drop-down {
         </property>
         <property name="currentIndex">
          <number>0</number>
+        </property>
+        <property name="elideMode">
+         <enum>Qt::ElideNone</enum>
         </property>
         <widget class="QWidget" name="tab1">
          <attribute name="title">
@@ -149,120 +147,52 @@ QComboBox::drop-down {
           </item>
          </layout>
         </widget>
-        <widget class="QWidget" name="options">
-         <attribute name="title">
-          <string>Options</string>
-         </attribute>
-         <layout class="QGridLayout" name="gridLayout_2">
-          <item row="0" column="0">
-           <widget class="QGroupBox" name="ui_group_cfg">
-            <property name="title">
-             <string>Classifier configuration</string>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout">
-             <item>
-              <widget class="QPushButton" name="ui_button_load_classification">
-               <property name="styleSheet">
-                <string notr="true"/>
-               </property>
-               <property name="text">
-                <string>Load Classification Cfg</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QComboBox" name="ui_list_classes">
-               <property name="styleSheet">
-                <string notr="true"/>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-         </layout>
-        </widget>
        </widget>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="right_bar" stretch="1,1,4">
+       <layout class="QVBoxLayout" name="right_bar" stretch="1,8">
+        <property name="spacing">
+         <number>5</number>
+        </property>
         <item>
-         <widget class="QGroupBox" name="groupBox_4">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="title">
-           <string>Tools</string>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_3">
-           <item>
-            <widget class="QPushButton" name="ui_button_save">
-             <property name="styleSheet">
-              <string notr="true"/>
-             </property>
-             <property name="text">
-              <string>Save</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="ui_button_randomize_views">
-             <property name="text">
-              <string>Randomize Views</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="groupBox_3">
-          <property name="title">
-           <string>Objects configuration</string>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_2">
-           <item>
-            <widget class="QPushButton" name="ui_button_load_raw_objects">
-             <property name="styleSheet">
-              <string notr="true"/>
-             </property>
-             <property name="text">
-              <string>Load Raw Objects</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QGroupBox" name="groupBox_2">
-             <property name="title">
-              <string>Instances</string>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_6">
-              <item row="0" column="0">
-               <widget class="QListView" name="ui_listm_instances">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QPushButton" name="ui_button_create_from_boxes">
-                <property name="text">
-                 <string>Create Instance From Boxes</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-          </layout>
-         </widget>
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <widget class="QLabel" name="label">
+            <property name="font">
+             <font>
+              <pointsize>15</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Options</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="ui_button_save">
+            <property name="styleSheet">
+             <string notr="true"/>
+            </property>
+            <property name="text">
+             <string>Save</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="ui_button_randomize_views">
+            <property name="text">
+             <string>Randomize Views</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
         <item>
          <layout class="QGridLayout" name="ui_test_layout" rowstretch="1">
           <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="horizontalSpacing">
            <number>0</number>
           </property>
           <property name="verticalSpacing">
@@ -276,7 +206,6 @@ QComboBox::drop-down {
     </item>
    </layout>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
  <connections/>

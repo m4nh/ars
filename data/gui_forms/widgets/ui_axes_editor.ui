@@ -24,7 +24,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="2,8">
+    <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0">
      <property name="spacing">
       <number>15</number>
      </property>
@@ -37,14 +37,14 @@
      <item>
       <widget class="QLabel" name="ui_label_x">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
        <property name="maximumSize">
         <size>
-         <width>450000</width>
+         <width>25</width>
          <height>16777215</height>
         </size>
        </property>
@@ -72,7 +72,7 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="2,8">
+    <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0">
      <property name="spacing">
       <number>15</number>
      </property>
@@ -85,14 +85,14 @@
      <item>
       <widget class="QLabel" name="ui_label_y">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
        <property name="maximumSize">
         <size>
-         <width>450000</width>
+         <width>25</width>
          <height>16777215</height>
         </size>
        </property>
@@ -120,7 +120,7 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="2,8">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0">
      <property name="spacing">
       <number>15</number>
      </property>
@@ -133,14 +133,14 @@
      <item>
       <widget class="QLabel" name="ui_label_z">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
        <property name="maximumSize">
         <size>
-         <width>450000</width>
+         <width>25</width>
          <height>16777215</height>
         </size>
        </property>
