@@ -8,16 +8,16 @@ from PyQt4.QtCore import *
 from PyQt4 import QtCore
 
 
-
 class WAxesButtons(WBaseWidget):
 
-    def __init__(self,name='axes',label='Axes Buttons', changeCallback=None):
+    def __init__(self, name='axes', label='Axes Buttons', changeCallback=None, step=0.001):
         super(WAxesButtons, self).__init__(
             'ui_axes_buttons'
         )
-        
+
         self.name = name
         self.label = label
+        self.step = step
         self.ui_label.setText(label)
 
         #⬢⬢⬢⬢⬢➤ Callback
@@ -33,18 +33,17 @@ class WAxesButtons(WBaseWidget):
         }
         self.buttons_name_map = {}
 
-        for label,button in self.buttons.iteritems():
+        # TODO:example style
+        self.ui_button_x_minus.setStyleSheet(
+            "QPushButton:hover{background-color: red}")
+
+        for label, button in self.buttons.iteritems():
             button.clicked.connect(self.buttonPressed)
             self.buttons_name_map[str(button.objectName())] = label
-
 
     def buttonPressed(self):
         if self.changeCallback != None:
             label = self.buttons_name_map[str(self.sender().objectName())]
-            delta = float(label[1]+str(self.ui_spin_step.value())) 
-            val = (self.name,label[0],delta )
+            delta = float(label[1] + str(self.step))
+            val = (self.name, label[0], delta)
             self.changeCallback(val)
-      
-
-
-       

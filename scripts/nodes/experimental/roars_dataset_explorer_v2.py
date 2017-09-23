@@ -98,9 +98,6 @@ class MainWindow(PyQtWindow):
 
         #⬢⬢⬢⬢⬢➤ Classes Management
         self.temporary_class_map = None
-        # self.ui_button_load_classification.clicked.connect(
-        #     self.loadClassificationCfg)
-        # self.ui_list_classes.currentIndexChanged.connect(self.comboBoxChanged)
 
         #⬢⬢⬢⬢⬢➤ Storage Management
         self.ui_button_save.clicked.connect(self.save)
@@ -167,19 +164,6 @@ class MainWindow(PyQtWindow):
         if self.showPromptBool(title='Saving Scene', message='Are you sure?'):
             self.scene.setInstances(self.ui_instances_list.getInstances())
             self.scene.save(self.scene_filename)
-
-    def comboBoxChanged(self, index):
-        combo = self.sender()
-        if "classes" in combo.objectName():
-            color = TrainingClass.getColorByLabel(index - 1, output_type="HEX")
-            combo.setStyleSheet(
-                "QComboBox::drop-down {background: " + color + ";}")
-
-            inst = self.getSelectedInstance()
-            if inst:
-                inst.label = index - 1
-
-            self.refresh()
 
     def getSelectedInstance(self):
         try:

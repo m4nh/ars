@@ -30,11 +30,6 @@ output_folder = node.setupParameter(
     "output_folder", "")
 
 
-WBaseWidget.DEFAULT_UI_WIDGETS_FOLDER = node.getFileInPackage(
-    'roars', 'data/gui_forms/widgets'
-)
-
-
 scene = TrainingScene.loadFromFile(scene_manifest_file)
 
 dataset = TrainingDataset([scene])

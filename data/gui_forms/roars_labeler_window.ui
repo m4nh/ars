@@ -14,84 +14,7 @@
    <string>ROARS: Labeler</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">
-QMainWindow,QMessageBox,QTabWidget &gt; QWidget{
-	background:#222;
-}
-QTabWidget{
-	border:none;	
-}
-QTabBar::tab {
-	
-	margin-right:10px;
-   padding:10px;
-}
-QPushButton,QTabBar::tab 
-{
-   background-color:#039BE5;
-   border:none;
-   color: white;
-}
-QLabel{
-font:  &quot;Ubuntu&quot;;
-color:white;
-}
-QPushButton:hover
-{
-   background-color:#03A9F4 !important;
-   border:none;
-}
-QGroupBox{
-	
-}
-
-QDoubleSpinBox,QSpinBox{
-		background:white;
-		color:black;
-	font: 25 12pt &quot;Ubuntu&quot;;
-}
-QSpinBox::down-arrow,QSpinBox::up-arrow ,QDoubleSpinBox::down-arrow,QDoubleSpinBox::up-arrow {
- width: 15px;
-    height:15px;
-	margin:0;
-	padding:0;
-}
-
-QDoubleSpinBox::down-arrow,QSpinBox::down-arrow {
-    image: url(/home/daniele/work/ros/roars_ws/src/roars/data/gui_forms/images/minus.ico);
-}
-QDoubleSpinBox::up-arrow,QSpinBox::up-arrow {
-    image: url(/home/daniele/work/ros/roars_ws/src/roars/data/gui_forms/images/plus.ico);
-  
-}
-QDoubleSpinBox::up-button, QDoubleSpinBox::down-button,QSpinBox::up-button, QSpinBox::down-button  {
-	width:15px;
-	border:none;
-}
-QDoubleSpinBox::down-button:hover,QDoubleSpinBox::up-button:hover,QSpinBox::down-button:hover,QSpinBox::up-button:hover {
-  background:#aaa;
-}
-QComboBox{
-    background:white;
-	border:none;
-}
-QComboBox::down-arrow {
-    image: url(/home/daniele/work/ros/roars_ws/src/roars/data/gui_forms/images/plus.ico);
-width:15px;
-height:15px;
-}
-QComboBox::drop-down {
-     subcontrol-origin: padding;
-     subcontrol-position: top right;
-     width: 25px;
- 
-     border-left-width: 1px;
-     border-left-color: darkgray;
-     border-left-style: dotted; /* just a single line */
-  
- }
-
-</string>
+   <string notr="true"/>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="styleSheet">
@@ -99,7 +22,7 @@ QComboBox::drop-down {
    </property>
    <layout class="QGridLayout" name="gridLayout_4">
     <item row="0" column="0">
-     <layout class="QHBoxLayout" name="main_layout" stretch="4,1">
+     <layout class="QHBoxLayout" name="main_layout" stretch="8,2">
       <item>
        <widget class="QTabWidget" name="ui_main_tab">
         <property name="sizePolicy">
@@ -169,14 +92,25 @@ QComboBox::drop-down {
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="ui_button_save">
-            <property name="styleSheet">
-             <string notr="true"/>
-            </property>
-            <property name="text">
-             <string>Save</string>
-            </property>
-           </widget>
+           <layout class="QHBoxLayout" name="horizontalLayout">
+            <item>
+             <widget class="QPushButton" name="ui_button_save">
+              <property name="styleSheet">
+               <string notr="true"/>
+              </property>
+              <property name="text">
+               <string>Save</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="ui_button_generate">
+              <property name="text">
+               <string>Generate</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item>
            <widget class="QPushButton" name="ui_button_randomize_views">
@@ -205,6 +139,16 @@ QComboBox::drop-down {
      </layout>
     </item>
    </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1405</width>
+     <height>19</height>
+    </rect>
+   </property>
   </widget>
  </widget>
  <resources/>

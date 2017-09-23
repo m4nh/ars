@@ -21,14 +21,14 @@ class WInstanceEditor(WBaseWidget):
         )
 
         self.ui_axis_translation = WAxesEditor(names=['cx', 'cy', 'cz'], labels=[
-                                               'X', 'Y', 'Z'], unit='m', step=0.001, changeCallback=self.valueChanged)
+                                               'X [m]', 'Y [m]', 'Z [m]'], unit='', step=0.001, changeCallback=self.valueChanged)
         self.ui_axis_rotation = WAxesEditor(names=['roll', 'pitch', 'yaw'], labels=[
                                             'R', 'P', 'Y'], unit=u'\N{DEGREE SIGN}', step=0.2, binding_conversion=180.0 / math.pi, changeCallback=self.valueChanged)
         self.ui_axes_container.addWidget(self.ui_axis_translation)
         self.ui_axes_container.addWidget(self.ui_axis_rotation)
 
         self.ui_axes_relative_buttons = WAxesButtons(
-            name='relative', label='Relative Movement', changeCallback=self.axesButtonCallback)
+            name='relative', label='Relative\nMove', changeCallback=self.axesButtonCallback)
         self.ui_axes_size_butttons = WAxesButtons(
             name='size', label='Size', changeCallback=self.axesButtonCallback)
 

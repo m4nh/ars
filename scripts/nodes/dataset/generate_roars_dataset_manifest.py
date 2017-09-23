@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
-from roars.datasets.datasetutils import TrainingScene
+from roars.datasets.datasetutils import TrainingScene, TrainingClassesMap
 from roars.rosutils.rosnode import RosNode
+import sys
 
 #⬢⬢⬢⬢⬢➤ NODE
 node = RosNode("generate_roars_dataset_manifest")
@@ -14,6 +15,13 @@ camera_intrisics_file = node.setupParameter("camera_intrisics_file", '')
 camera_extrinsics_file = node.setupParameter("camera_extrinsics_file", '')
 output_manifest_file = node.setupParameter("output_manifest_file", '')
 force_relative = node.setupParameter("force_relative", False)
+classes = node.setupParameter("classes", "", array_type=str)
+force_no_classes = node.setupParameter("force_no_classes", False)
+
+if not force_no_classes and len(classes) == 0:
+    print("No classes found!")
+    sys.exit(0)
+
 
 #⬢⬢⬢⬢⬢➤ Create Scenes
 scene = TrainingScene(
@@ -29,6 +37,10 @@ scene.initialize()
 
 #⬢⬢⬢⬢⬢➤ Save Scene to file if it is valid
 if scene.isValid():
+
+    cm = TrainingClassesMap(classes)
+    scene.setClasses(cm)
+
     if output_manifest_file != '':
         scene.save(output_manifest_file, force_relative=force_relative)
         print("Saved!")

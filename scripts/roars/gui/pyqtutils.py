@@ -9,6 +9,7 @@ import sys
 import signal
 import numpy as np
 import random
+import qdarkstyle
 
 #######################################################################
 #######################################################################
@@ -108,11 +109,10 @@ class PyQtWindow(QtGui.QMainWindow):
         signal.signal(signal.SIGINT, signal.SIG_DFL)
 
         # REPLACE STylesheet with custom paths
-        stylesheet = str(self.styleSheet())
-        stylesheet = stylesheet.replace(
-            "/home/daniele/work/ros/roars_ws/src/roars/data/gui_forms/images/", PyQtWindow.DEFAULT_IMAGES_PATH + '/')
-        self.setStyleSheet(stylesheet)
-        print stylesheet
+        if qdarkstyle:
+            self.qt_application.setStyleSheet(
+                qdarkstyle.load_stylesheet(pyside=False)
+            )
 
     def run(self):
         self.show()

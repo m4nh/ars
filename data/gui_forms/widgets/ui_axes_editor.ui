@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>580</width>
-    <height>304</height>
+    <width>208</width>
+    <height>94</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -44,7 +44,7 @@
        </property>
        <property name="maximumSize">
         <size>
-         <width>25</width>
+         <width>35</width>
          <height>16777215</height>
         </size>
        </property>
@@ -60,6 +60,12 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>0</height>
+        </size>
        </property>
        <property name="accelerated">
         <bool>true</bool>
@@ -92,7 +98,7 @@
        </property>
        <property name="maximumSize">
         <size>
-         <width>25</width>
+         <width>35</width>
          <height>16777215</height>
         </size>
        </property>
@@ -108,6 +114,12 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>0</height>
+        </size>
        </property>
        <property name="accelerated">
         <bool>true</bool>
@@ -140,7 +152,7 @@
        </property>
        <property name="maximumSize">
         <size>
-         <width>25</width>
+         <width>35</width>
          <height>16777215</height>
         </size>
        </property>
@@ -156,6 +168,12 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>0</height>
+        </size>
        </property>
        <property name="accelerated">
         <bool>true</bool>
