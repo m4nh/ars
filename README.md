@@ -33,6 +33,7 @@ Each datasets also contains a simple "verify.py" python script that picks&shows 
 
 * PyQt4 (sudo apt-get install python-qt4)
 * QDarkStyle (pip install qdarkstyle)
+* Numpy
 * Opencv
 * KDL
 
