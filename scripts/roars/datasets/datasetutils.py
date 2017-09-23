@@ -186,7 +186,10 @@ class TrainingScene(object):
         #⬢⬢⬢⬢⬢➤ Checks for Images folder path
         if os.path.exists(images_path):
             # Lists all Images in scene
-            files = glob.glob(os.path.join(images_path, '*.jpg'))
+            files_temp = glob.glob(os.path.join(images_path, '*.jpg'))
+            files = []
+            for f in files_temp:
+                files.append(os.path.basename(f))
             # TODO: enable other image extensions
         else:
             print("Images path doesn't exist: {}".format(images_path))
@@ -233,10 +236,6 @@ class TrainingScene(object):
             return
 
         #⬢⬢⬢⬢⬢➤ Stores images paths A-Z
-        # for f in sorted(files):
-        #     full_path = os.path.join(
-        #         self.scene_path, self.image_topic_name, f)
-        #     self.image_filenames_lists.append(full_path)
         self.image_filenames_lists = sorted(files)
 
         #⬢⬢⬢⬢⬢➤ Checks for Robot poses path

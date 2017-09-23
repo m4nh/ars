@@ -22,16 +22,12 @@ import os
 
 
 #⬢⬢⬢⬢⬢➤ NODE
-node = RosNode("roars_dataset_explorer")
+node = RosNode("roars_scene_explorer")
 window_size = node.setupParameter("window_size", "1400;900", array_type=int)
-
-scene_manifest_file = node.setupParameter("scene_manifest_file", '')
+scene_manifest_file = node.setupParameter("manifest", '')
 
 WBaseWidget.DEFAULT_UI_WIDGETS_FOLDER = node.getFileInPackage(
     'roars', 'data/gui_forms/widgets'
-)
-PyQtWindow.DEFAULT_IMAGES_PATH = node.getFileInPackage(
-    'roars', 'data/gui_forms/images'
 )
 
 

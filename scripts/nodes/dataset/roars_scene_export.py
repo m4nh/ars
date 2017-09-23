@@ -22,7 +22,7 @@ import random
 import sys
 
 #⬢⬢⬢⬢⬢➤ NODE
-node = RosNode("roars_dataset_export")
+node = RosNode("roars_scene_export")
 
 scene_manifest_file = node.setupParameter("scene_manifest_file", '')
 
