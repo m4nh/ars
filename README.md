@@ -11,12 +11,12 @@ As stated in the paper, here are all the training datasets used in our experimen
 
 Each Dataset (that we call *Raw Dataset*) is a folder containing:
 
-* *images*: subfolder containing an ordered list of images, in the form "rgb_\<NUMBER>.jpg"
-* *labels*: subfolder containing an ordered list of labels, in the form "\<NUMBER>.txt" (this NUMBER match with the one in the corresponding image filename)
+* **images**: subfolder containing an ordered list of images, in the form "rgb_\<NUMBER>.jpg"
+* **labels**: subfolder containing an ordered list of labels, in the form "\<NUMBER>.txt" (this NUMBER match with the one in the corresponding image filename)
   * each row in the *label* file is in the form "\<CLASS> \<X> \<Y> \<W> \<H>" representing a bounding box in relative coordinates (Percentage value 0..1 of the size of the image) and X,Y is the center of the box.
-* *ids*: subfolder containing an ordered list of ids, used for debug purposes
+* **ids**: subfolder containing an ordered list of ids, used for debug purposes
 
-Each datasets also contains a simple "verify.py" python script that picks&shows randomly a frame in the dataset (including relative bounding boxes); it's used only for debug.
+Each datasets also contains a simple "verify.py" python script that picks&shows randomly a frame in the dataset (including relative bounding boxes); it's used only for debug purposes.
 
 ## Generate and Explore a Scene
 
