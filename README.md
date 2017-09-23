@@ -41,7 +41,7 @@ A *Roars Scene* is a simple folder containing a dataset relative to a robot scan
 
 * ***images*** : a folder containing an ordered list of images
 * *robot_poses.txt*: a file containing an ordere list of robot poses.. the i-th robot pose is relative to the i-th image
-* *camera_extrinsics.txt*: a file containing the transformation of the matrix relative to the robot wrist. [x y z qx qy qz qw]
+* *camera_extrinsics.txt*: a file containing the transformation of the camera w.r.t. to the robot wrist. [x y z qx qy qz qw]
 * *camera_intrinsics.txt*: a file containing the camera intrinsics parameters [w h fx fy cx cy k1 k2 p1 p2]
 
 You can download a Demo Scene from here: [Example Scene](http://www.vision.deis.unibo.it/Roars/Roars_Demo_Scene.tar.gz). This is a full working scene ready to be used.
