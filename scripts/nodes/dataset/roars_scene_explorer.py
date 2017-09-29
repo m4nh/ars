@@ -153,7 +153,7 @@ class MainWindow(PyQtWindow):
     def generate(self):
         dname = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
 
-        outpath = os.path.join(dname, self.scene.getName())
+        outpath = os.path.join(dname, self.scene.getName() + "_raw")
         if os.path.exists(outpath):
             self.showDialog('Folder {} is not void!'.format(outpath))
             return
