@@ -99,11 +99,14 @@ class meta_trainer():
         """
         self._check_ready()
 
-        if not hasattr(self,'_class_map'):
-            with open(os.path.join(self._input_folder,CLASS_FILE)) as f_in:
-                classes =[c.strip() for c in  f_in.readlines()]
+        if not hasattr(self,'_c_map'):
+            if os.path.exists(os.path.join(self._input_folder,CLASS_FILE)):
+                with open(os.path.join(self._input_folder,CLASS_FILE)) as f_in:
+                    classes =[c.strip() for c in  f_in.readlines()]
             
-            self._c_map = classes
+                self._c_map = classes
+            else:
+                raise Exception('Unable to find {}'.format(CLASS_FILE))
         
         return self._c_map
 
@@ -125,5 +128,6 @@ class meta_trainer():
         if result==0:
             #save final model
             self._export()
+            print('All DONE!')
         else:
             raise Exception('Train Failed')

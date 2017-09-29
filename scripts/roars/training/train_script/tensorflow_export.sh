@@ -12,4 +12,4 @@ PYTHON_SCRIPT="object_detection/export_inference_graph.py"
 cd ${BASE_CODE_DIR}
 
 #start training
-python ${PYTHON_SCRIPT} --input_type image_tensor --pipeline_config_path ${PIPELINE_CONFIG_PATH} --trained_checpoint_prefix ${CHECKPOINT_FILE_PATH} --output_directory ${OUT_FOLDER}
+python ${PYTHON_SCRIPT} --input_type image_tensor --pipeline_config_path ${PIPELINE_CONFIG_PATH} --trained_checkpoint_prefix ${CHECKPOINT_FILE_PATH} --output_directory ${OUT_FOLDER}

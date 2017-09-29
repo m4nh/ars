@@ -12,4 +12,4 @@ PYTHON_SCRIPT="object_detection/train.py"
 cd ${BASE_CODE_DIR}
 
 #start training
-python ${PYTHON_SCRIPT} --logtostderr --pipeline_config_path=$PIPELINE_CONFIG_PATH --train_dir=$OUT_FOLDER
+python3 ${PYTHON_SCRIPT} --logtostderr --pipeline_config_path=$PIPELINE_CONFIG_PATH --train_dir=$OUT_FOLDER

@@ -1,5 +1,5 @@
-import meta_trainer
-import tensorflow_trainer
+from roars.training import meta_trainer
+from roars.training import tensorflow_trainer
 from functools import partial
 
 

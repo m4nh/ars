@@ -1,5 +1,5 @@
 from __future__ import print_function
-import meta_trainer
+from roars.training import meta_trainer
 import os
 import glob
 import io
@@ -275,7 +275,7 @@ class tensorflow_trainer(meta_trainer.meta_trainer):
         Export trained model as freezed graph
         """
         print('='*50)
-        print('=     Exporting trained graph     =')
+        print('=            Exporting trained graph             =')
         print('='*50)
 
         #read checkpoint gile
@@ -287,7 +287,7 @@ class tensorflow_trainer(meta_trainer.meta_trainer):
         os.environ['TF_MODEL_DIR']=os.path.join(self._tf_models_base_dir,'research')
         os.environ['CONFIG_PATH']=self._config_file
         os.environ['OUT_FOLDER']=self._export_folder
-        os.envirom['CHECKPOINT_FILE']=self._ckpt_path
+        os.environ['CHECKPOINT_FILE']=self._ckpt_path
 
         #call tesnorflow_export.sh
         print('Resulting detector will be saved in {}'.format(self._output_folder))
