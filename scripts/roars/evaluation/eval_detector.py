@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import cv2
 import argparse
@@ -180,6 +181,9 @@ if __name__=='__main__':
         for gb in gt_boxes:
             if gb.classId not in class_scores:
                 class_scores[gb.classId] = make_score_holder()
+        for pb in p_boxes:
+            if pb.classId not in class_scores:
+                class_scores[pb.classId] = make_score_holder()
 
         correct = [False]*len(p_boxes)
         gt_map = [{'index':None,'intersection':0,'max_conf':0,'class_id':g.classId} for g in gt_boxes]
