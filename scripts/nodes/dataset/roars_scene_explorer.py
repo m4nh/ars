@@ -76,13 +76,13 @@ class MainWindow(PyQtWindow):
         self.ui_test_layout.addWidget(self.ui_instance_editor)
 
         # Instance Creator
-        self.ui_instance_creator = WInstanceCreator(
-            scene=self.scene,
-            changeCallback=self.creatorCallback
-        )
-        self.ui_test_layout.addWidget(self.ui_instance_creator)
-        for sv in self.ui_scene_visualizers_list:
-            sv.addDrawerCallback(self.ui_instance_creator.addRawData)
+        # self.ui_instance_creator = WInstanceCreator(
+        #     scene=self.scene,
+        #     changeCallback=self.creatorCallback
+        # )
+        # self.ui_test_layout.addWidget(self.ui_instance_creator)
+        # for sv in self.ui_scene_visualizers_list:
+        #     sv.addDrawerCallback(self.ui_instance_creator.addRawData)
 
         #⬢⬢⬢⬢⬢➤ Classes Management
         self.temporary_class_map = None
