@@ -1,5 +1,3 @@
-# ROARS: RObot for Augmented Reality Self-labeling
-
 ## Training Datasets
 
 As stated in the paper, here are all the training datasets used in our experiments:
