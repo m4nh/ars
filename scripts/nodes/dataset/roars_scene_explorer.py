@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
-from roars.datasets.datasetutils import RawDatasetBuilder, TrainingScene, TrainingClassesMap, TrainingClass, TrainingInstance, TrainingDataset
+from roars.datasets.datasetutils import PixDatasetBuilder, RawDatasetBuilder, TrainingScene, TrainingClassesMap, TrainingClass, TrainingInstance, TrainingDataset
 from roars.rosutils.rosnode import RosNode
 from roars.datasets.datasetutils import JSONHelper
 from roars.gui.pyqtutils import PyQtWindow, PyQtImageConverter, PyQtWidget
@@ -151,6 +151,7 @@ class MainWindow(PyQtWindow):
             self.scene.save(self.scene_filename)
 
     def generate(self):
+        dataset_type = 'RAW'  # TODO: configuration or option
         dname = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
 
         outpath = os.path.join(dname, self.scene.getName() + "_raw")
@@ -159,12 +160,21 @@ class MainWindow(PyQtWindow):
             return
 
         dataset = TrainingDataset([self.scene])
-        dataset_builder = RawDatasetBuilder(dataset, outpath)
+        print(dataset_type)
+        if dataset_type == 'RAW':
+            dataset_builder = RawDatasetBuilder(dataset, outpath)
 
-        if dataset_builder.build():
-            self.showDialog('Dataset built! Folder: {}'.format(outpath))
-        else:
-            self.showDialog('Invalid output folder: {}'.format(outpath))
+            if dataset_builder.build():
+                self.showDialog('Dataset built! Folder: {}'.format(outpath))
+            else:
+                self.showDialog('Invalid output folder: {}'.format(outpath))
+
+        if dataset_type == 'PIX':
+
+            dataset_builder = PixDatasetBuilder(
+                dataset, outpath, jumps=1, val_percentage=0.0, test_percentage=0.0)
+            if dataset_builder.build():
+                print("PINO")
 
     def updateClassLists(self, class_map):
         self.ui_instance_editor.setClassMap(class_map)
