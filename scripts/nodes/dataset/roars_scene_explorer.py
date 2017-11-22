@@ -151,7 +151,7 @@ class MainWindow(PyQtWindow):
             self.scene.save(self.scene_filename)
 
     def generate(self):
-        dataset_type = 'RAW'  # TODO: configuration or option
+        dataset_type = 'MASK'  # TODO: configuration or option
         dname = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
 
         outpath = os.path.join(dname, self.scene.getName() + "_raw")
@@ -175,6 +175,14 @@ class MainWindow(PyQtWindow):
                 dataset, outpath, jumps=1, val_percentage=0.0, test_percentage=0.0)
             if dataset_builder.build():
                 print("PINO")
+
+        if dataset_type == 'MASK':
+            from roars.datasets.generators.maskgenerator import MaskDatasetBuilder
+            dataset_builder = MaskDatasetBuilder(dataset, outpath, jumps=50)
+            if dataset_builder.build():
+                self.showDialog('Dataset built! Folder: {}'.format(outpath))
+            else:
+                self.showDialog('Invalid output folder: {}'.format(outpath))
 
     def updateClassLists(self, class_map):
         self.ui_instance_editor.setClassMap(class_map)

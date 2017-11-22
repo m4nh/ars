@@ -147,10 +147,11 @@ class TrainingScene(object):
     DEFAULT_CAMERA_POSE_NAME = 'camera_extrinsics.txt'
     DEFAULT_CAMERA_PARAMS_NAME = 'camera_intrisics.txt'
 
-    def __init__(self, scene_path='#', images_path='aaa', robot_pose_name='#', camera_intrisics_file='', camera_extrinsics_file='', relative_path=None):
+    def __init__(self, scene_path='#', images_path='aaa', images_depth_path=None, robot_pose_name='#', camera_intrisics_file='', camera_extrinsics_file='', relative_path=None):
         self.classes = {}
         self.scene_path = scene_path
         self.images_path = images_path
+        self.images_depth_path = images_depth_path
         self.robot_pose_name = robot_pose_name
         self.image_filenames_lists = []
         self.robot_to_camera_pose = [0, 0, 0, 0, 0, 0, 1]
@@ -347,6 +348,12 @@ class TrainingScene(object):
     def getImagePath(self, index):
         index = index % self.size()
         return os.path.join(self.scene_path, self.images_path, self.image_filenames_lists[index])
+
+    def getImageDepthPath(self, index):
+        if self.images_depth_path == None:
+            return None
+        index = index % self.size()
+        return os.path.join(self.scene_path, self.images_depth_path, self.image_filenames_lists[index])
 
     def getFrameByIndex(self, index):
         return TrainingFrame(scene=self, internal_index=index)
@@ -688,6 +695,8 @@ class TrainingFrame(object):
         self.scene = scene
         self.internal_index = internal_index
         self.image_path = self.scene.getImagePath(self.internal_index)
+        self.image_depth_path = self.scene.getImageDepthPath(
+            self.internal_index)
         self.camera_pose = self.scene.getCameraPose(self.internal_index)
 
     def getId(self):
@@ -701,6 +710,9 @@ class TrainingFrame(object):
 
     def getImagePath(self):
         return self.image_path
+
+    def getImageDepthPath(self):
+        return self.image_depth_path
 
     def getCameraPose(self):
         return self.camera_pose
