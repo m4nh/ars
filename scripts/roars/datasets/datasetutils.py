@@ -146,6 +146,7 @@ class TrainingCamera(object):
 class TrainingScene(object):
     DEFAULT_CAMERA_POSE_NAME = 'camera_extrinsics.txt'
     DEFAULT_CAMERA_PARAMS_NAME = 'camera_intrisics.txt'
+    AVAILABLE_FILE_FORMATS = ['jpg', 'png', 'JPG', 'PNG', 'bmp']
 
     def __init__(self, scene_path='#', images_path='aaa', images_depth_path=None, robot_pose_name='#', camera_intrisics_file='', camera_extrinsics_file='', relative_path=None):
         self.classes = {}
@@ -352,8 +353,16 @@ class TrainingScene(object):
     def getImageDepthPath(self, index):
         if self.images_depth_path == None:
             return None
+
         index = index % self.size()
-        return os.path.join(self.scene_path, self.images_depth_path, self.image_filenames_lists[index])
+        path = os.path.join(
+            self.scene_path, self.images_depth_path, self.image_filenames_lists[index])
+        if not os.path.exists(path):
+            for ext in TrainingScene.AVAILABLE_FILE_FORMATS:
+                path = os.path.splitext(path)[0] + '.' + ext
+                if os.path.exists(path):
+                    return path
+        return None
 
     def getFrameByIndex(self, index):
         return TrainingFrame(scene=self, internal_index=index)
@@ -736,10 +745,13 @@ class TrainingFrame(object):
 
         return boxes
 
-    def getInstancesBoxesWithLabels(self, sorted=True):
+    def getInstancesBoxesWithLabels(self, sorted=True, filter_labels=[]):
         instances = self.scene.getAllInstances()
         boxes = []
         for inst in instances:
+            if len(filter_labels) > 0:
+                if inst.label not in filter_labels:
+                    continue
             vobj = VirtualObject(frame=inst, size=inst.size, label=inst.label)
             img_pts = vobj.getImagePoints(
                 camera_frame=self.getCameraPose(),

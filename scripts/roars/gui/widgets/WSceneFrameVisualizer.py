@@ -195,6 +195,7 @@ class WSceneFrameVisualizer(WBaseWidget):
     def updateCurrentFrame(self):
         if self.scene:
             self.current_frame = self.frames[self.current_frame_index]
+            print(self.current_frame.getImageDepthPath())
             self.current_image = cv2.imread(self.current_frame.getImagePath())
             self.current_image_gizmo = self.current_image.copy()
             self.refresh()
