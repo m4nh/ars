@@ -15,7 +15,7 @@ import math
 
 class WInstancesList(WBaseWidget):
 
-    def __init__(self, changeCallback=None):
+    def __init__(self, changeCallback=None, newCallback=None):
         super(WInstancesList, self).__init__(
             'ui_instances_list'
         )
@@ -24,6 +24,9 @@ class WInstancesList(WBaseWidget):
 
         #⬢⬢⬢⬢⬢➤ Change Callback
         self.changeCallback = changeCallback
+        self.newCallback = newCallback
+        if self.newCallback:
+            self.ui_list.doubleClicked.connect(self.newCallback)
 
     def getInstances(self):
         return self.instances

@@ -68,7 +68,7 @@ class MainWindow(PyQtWindow):
 
         # Instance List
         self.ui_instances_list = WInstancesList(
-            changeCallback=self.instancesListChange)
+            changeCallback=self.instancesListChange, newCallback=self.createNewInstance)
         self.ui_test_layout.addWidget(self.ui_instances_list)
 
         # Instance Editor
@@ -76,13 +76,13 @@ class MainWindow(PyQtWindow):
         self.ui_test_layout.addWidget(self.ui_instance_editor)
 
         # Instance Creator
-        # self.ui_instance_creator = WInstanceCreator(
-        #     scene=self.scene,
-        #     changeCallback=self.creatorCallback
-        # )
-        # self.ui_test_layout.addWidget(self.ui_instance_creator)
-        # for sv in self.ui_scene_visualizers_list:
-        #     sv.addDrawerCallback(self.ui_instance_creator.addRawData)
+        self.ui_instance_creator = WInstanceCreator(
+            scene=self.scene,
+            changeCallback=self.creatorCallback
+        )
+        self.ui_test_layout.addWidget(self.ui_instance_creator)
+        for sv in self.ui_scene_visualizers_list:
+            sv.addDrawerCallback(self.ui_instance_creator.addRawData)
 
         #⬢⬢⬢⬢⬢➤ Classes Management
         self.temporary_class_map = None
@@ -178,7 +178,7 @@ class MainWindow(PyQtWindow):
 
         if dataset_type == 'MASK':
             from roars.datasets.generators.maskgenerator import MaskDatasetBuilder
-            dataset_builder = MaskDatasetBuilder(dataset, outpath, jumps=50)
+            dataset_builder = MaskDatasetBuilder(dataset, outpath, jumps=1)
             if dataset_builder.build():
                 self.showDialog('Dataset built! Folder: {}'.format(outpath))
             else:

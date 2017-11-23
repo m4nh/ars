@@ -145,7 +145,7 @@ class TrainingCamera(object):
 
 class TrainingScene(object):
     DEFAULT_CAMERA_POSE_NAME = 'camera_extrinsics.txt'
-    DEFAULT_CAMERA_PARAMS_NAME = 'camera_intrisics.txt'
+    DEFAULT_CAMERA_PARAMS_NAME = 'camera_intrinsics.txt'
     AVAILABLE_FILE_FORMATS = ['jpg', 'png', 'JPG', 'PNG', 'bmp']
 
     def __init__(self, scene_path='#', images_path='aaa', images_depth_path=None, robot_pose_name='#', camera_intrisics_file='', camera_extrinsics_file='', relative_path=None):
@@ -189,6 +189,8 @@ class TrainingScene(object):
         if os.path.exists(images_path):
             # Lists all Images in scene
             files_temp = glob.glob(os.path.join(images_path, '*.jpg'))
+            if len(files_temp) == 0:
+                files_temp = glob.glob(os.path.join(images_path, '*.png'))
             files = []
             for f in files_temp:
                 files.append(os.path.basename(f))
@@ -357,11 +359,14 @@ class TrainingScene(object):
         index = index % self.size()
         path = os.path.join(
             self.scene_path, self.images_depth_path, self.image_filenames_lists[index])
+
         if not os.path.exists(path):
             for ext in TrainingScene.AVAILABLE_FILE_FORMATS:
                 path = os.path.splitext(path)[0] + '.' + ext
                 if os.path.exists(path):
                     return path
+        else:
+            return path
         return None
 
     def getFrameByIndex(self, index):

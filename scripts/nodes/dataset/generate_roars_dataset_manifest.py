@@ -10,6 +10,7 @@ node = RosNode("generate_roars_dataset_manifest")
 
 scene_path = node.setupParameter("scene_path", '')
 images_path = node.setupParameter("images_path", 'images')
+depth_path = node.setupParameter("images_path", 'depth')
 robot_pose_name = node.setupParameter("robot_pose_name", 'robot_poses.txt')
 camera_intrisics_file = node.setupParameter("camera_intrisics_file", '')
 camera_extrinsics_file = node.setupParameter("camera_extrinsics_file", '')
@@ -26,6 +27,7 @@ if not force_no_classes and len(classes) == 0:
 scene = TrainingScene(
     scene_path=scene_path,
     images_path=images_path,
+    images_depth_path=depth_path,
     robot_pose_name=robot_pose_name,
     camera_intrisics_file=camera_intrisics_file,
     camera_extrinsics_file=camera_extrinsics_file
