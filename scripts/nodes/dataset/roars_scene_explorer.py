@@ -178,7 +178,7 @@ class MainWindow(PyQtWindow):
 
         if dataset_type == 'MASK':
             from roars.datasets.generators.maskgenerator import MaskDatasetBuilder
-            dataset_builder = MaskDatasetBuilder(dataset, outpath, jumps=1)
+            dataset_builder = MaskDatasetBuilder(dataset, outpath, jumps=1, boxed_instances=True)
             if dataset_builder.build():
                 self.showDialog('Dataset built! Folder: {}'.format(outpath))
             else:

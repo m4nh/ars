@@ -353,7 +353,10 @@ class TrainingScene(object):
         return os.path.join(self.scene_path, self.images_path, self.image_filenames_lists[index])
 
     def getImageDepthPath(self, index):
-        if self.images_depth_path == None:
+        try:
+            if self.images_depth_path == None:
+                return None
+        except:
             return None
 
         index = index % self.size()

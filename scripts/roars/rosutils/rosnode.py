@@ -22,10 +22,10 @@ class RosParamType(object):
 
 class RosNode(object):
 
-    def __init__(self, node_name="new_node", hz=30):
+    def __init__(self, node_name="new_node", hz=30, disable_signals=False):
         self.node_name = node_name
         self.hz = hz
-        self._node = rospy.init_node(self.node_name)
+        self._node = rospy.init_node(self.node_name, disable_signals=disable_signals)
 
         if self.hz > 0:
             self.rate = rospy.Rate(self.hz)

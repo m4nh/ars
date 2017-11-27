@@ -12,13 +12,14 @@ import roars.geometry.transformations as transformations
 class MaskDatasetBuilder(DatasetBuilder):
     ZERO_PADDING_SIZE = 5
 
-    def __init__(self, training_dataset, dest_folder, jumps=5, val_percentage=0.05, test_percentage=0.1, randomize_frames=False):
+    def __init__(self, training_dataset, dest_folder, jumps=5, val_percentage=0.05, test_percentage=0.1, randomize_frames=False, boxed_instances=False):
         super(MaskDatasetBuilder, self).__init__(
             training_dataset, dest_folder)
         self.jumps = jumps
         self.val_percentage = val_percentage
         self.test_percentage = test_percentage
         self.randomize_frames = randomize_frames
+        self.boxed_instances = boxed_instances
 
     def build(self, options={}):
 
@@ -46,11 +47,16 @@ class MaskDatasetBuilder(DatasetBuilder):
 
                 #⬢⬢⬢⬢⬢➤ Masks for each label
                 for l in labels:
+
                     gts = frame.getInstancesBoxesWithLabels(filter_labels=[l])
                     pair = np.ones(img.shape, dtype=np.uint8) * 255
                     for inst in gts:
-                        hull = cv2.convexHull(np.array(inst[1]))
-                        cv2.fillConvexPoly(pair, hull, TrainingClass.getColorByLabel(inst[0]))
+                        if not self.boxed_instances:
+                            hull = cv2.convexHull(np.array(inst[1]))
+                            cv2.fillConvexPoly(pair, hull, TrainingClass.getColorByLabel(inst[0]))
+                        else:
+                            hull = cv2.boundingRect(np.array(inst[1]))
+                            cv2.rectangle(pair, (hull[0], hull[1]), (hull[0] + hull[2], hull[1] + hull[3]), TrainingClass.getColorByLabel(inst[0]), -1)
                     mask_img_file = os.path.join(self.dest_folder, counter_string + "_mask_{}.png".format(l))
                     cv2.imwrite(mask_img_file, pair)
 
@@ -58,8 +64,12 @@ class MaskDatasetBuilder(DatasetBuilder):
                 gts = frame.getInstancesBoxesWithLabels()
                 pair = np.ones(img.shape, dtype=np.uint8) * 255
                 for inst in gts:
-                    hull = cv2.convexHull(np.array(inst[1]))
-                    cv2.fillConvexPoly(pair, hull, TrainingClass.getColorByLabel(inst[0]))
+                    if not self.boxed_instances:
+                        hull = cv2.convexHull(np.array(inst[1]))
+                        cv2.fillConvexPoly(pair, hull, TrainingClass.getColorByLabel(inst[0]))
+                    else:
+                        hull = cv2.boundingRect(np.array(inst[1]))
+                        cv2.rectangle(pair, (hull[0], hull[1]), (hull[0] + hull[2], hull[1] + hull[3]), TrainingClass.getColorByLabel(inst[0]), -1)
                 mask_img_file = os.path.join(self.dest_folder, counter_string + "_mask_all.png")
                 cv2.imwrite(mask_img_file, pair)
 
