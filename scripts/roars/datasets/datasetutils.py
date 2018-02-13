@@ -206,7 +206,10 @@ class TrainingScene(object):
                 TrainingScene.DEFAULT_CAMERA_PARAMS_NAME
             )
         else:
-            camera_param_path = self.camera_intrisics_file
+            camera_param_path = os.path.join(
+                self.scene_path,
+                self.camera_intrisics_file
+            )
         if os.path.exists(camera_param_path):
             # Load Camera Params
             try:
@@ -227,7 +230,9 @@ class TrainingScene(object):
                 TrainingScene.DEFAULT_CAMERA_POSE_NAME
             )
         else:
-            camera_pose_path = self.camera_extrinsics_file
+            camera_pose_path = os.path.join(
+                self.scene_path, self.camera_extrinsics_file
+            )
         if os.path.exists(camera_pose_path):
             # Load Camera Pose Frame
             try:
