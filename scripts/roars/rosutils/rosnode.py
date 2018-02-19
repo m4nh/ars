@@ -158,6 +158,9 @@ class RosNode(object):
                 if sp in par:
                     par = map(array_type, par.split(sp))
                     break
+            if isinstance(par, array_type):
+                par = [par]
+
         self._parameters[parameter_name] = par
         return par
 

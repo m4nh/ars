@@ -1108,7 +1108,6 @@ class RawDataset(object):
         self.img_folder = os.path.join(folder, "images")
         self.label_folder = os.path.join(folder, "labels")
         self.ids_folder = os.path.join(folder, "ids")
-
         if create:
             if os.path.exists(self.folder) or len(self.folder) == 0:
                 print("Folder '{}' already exists!".format(self.folder))
@@ -1120,6 +1119,7 @@ class RawDataset(object):
 
         else:
             image_files = sorted(glob.glob(self.img_folder + "/*.jpg"))
+
             label_files = sorted(glob.glob(self.label_folder + "/*.txt"))
             id_files = sorted(glob.glob(self.ids_folder + "/*.txt"))
 

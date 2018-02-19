@@ -151,10 +151,12 @@ class MainWindow(PyQtWindow):
             self.scene.save(self.scene_filename)
 
     def generate(self):
-        dataset_type = 'MASK'  # TODO: configuration or option
+        dataset_type = 'RAW'  # TODO: configuration or option
         dname = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
+        basename = os.path.basename(scene_manifest_file)
+        basename = os.path.splitext(basename)[0]
 
-        outpath = os.path.join(dname, self.scene.getName() + "_raw")
+        outpath = os.path.join(dname, basename + "_raw")
         if os.path.exists(outpath):
             self.showDialog('Folder {} is not void!'.format(outpath))
             return
