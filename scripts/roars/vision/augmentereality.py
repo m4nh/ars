@@ -208,12 +208,15 @@ class VirtualObject(PyKDL.Frame):
         y = float(p0[1]) / float(camera.height)
         return VirtualObject.enlargeFrame([x, y, w, h], 1.0, True)
 
-    def draw(self, img, camera_frame=PyKDL.Frame(), camera=None, color=np.array([255, 0, 255]), thickness=2):
+    def draw(self, img, camera_frame=PyKDL.Frame(), camera=None, color=np.array([255, 0, 255]), thickness=2, draw_rf=False):
         img_points = self.getImagePoints(
             camera_frame=camera_frame,
             camera=camera
         )
-        VirtualObject.drawBox(img_points, img, color, thickness)
+        if draw_rf:
+            VirtualObject.drawBoxWithRF(img_points, img, color, thickness)
+        else:
+            VirtualObject.drawBox(img_points, img, color, thickness)
 
     @staticmethod
     def drawBox(points, output, color=np.array([255, 0, 255]), thickness=2):
@@ -232,6 +235,38 @@ class VirtualObject(PyKDL.Frame):
             cv2.line(output, points[1], points[5], color, thickness)
             cv2.line(output, points[2], points[6], color, thickness)
             cv2.line(output, points[3], points[7], color, thickness)
+        except:
+            pass
+
+    @staticmethod
+    def drawBoxWithRF(points, output, color=np.array([255, 0, 255]), thickness=2):
+        try:
+            cv2.line(output, points[0], points[1], color, thickness)
+            cv2.line(output, points[1], points[2], color, thickness)
+            cv2.line(output, points[2], points[3], color, thickness)
+            cv2.line(output, points[3], points[0], color, thickness)
+
+            cv2.line(output, points[4], points[5], color, thickness)
+            cv2.line(output, points[5], points[6], color, thickness)
+            cv2.line(output, points[6], points[7], color, thickness)
+            cv2.line(output, points[7], points[4], color, thickness)
+
+            cv2.line(output, points[0], points[4], color, thickness)
+            cv2.line(output, points[1], points[5], color, thickness)
+            cv2.line(output, points[2], points[6], color, thickness)
+            cv2.line(output, points[3], points[7], color, thickness)
+
+            # Z
+            cv2.line(output, points[7], points[3], (0, 0, 255), thickness=thickness + 1)
+            # X
+            cv2.line(output, points[7], points[4], (255, 0, 0), thickness=thickness + 1)
+            # Y
+            cv2.line(output, points[6], points[7], (0, 255, 0), thickness=thickness + 1)
+
+            #cv2.line(output, points[5], points[6], (255, 255, 0.0), thickness=thickness + 1)
+            #cv2.line(output, points[6], points[7], (0.0, 255, 0.0), thickness=thickness + 1)
+            #cv2.line(output, points[3], points[7], (0, 0.0, 255.0), thickness=thickness + 1)
+            #cv2.line(output, points[7], points[4], (0, 255.0, 0.0), thickness=thickness + 1)
         except:
             pass
 

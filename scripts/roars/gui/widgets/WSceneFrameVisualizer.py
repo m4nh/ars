@@ -30,6 +30,52 @@ class MouseDrawer(object):
         pass
 
 
+class MouseArrowDrawer(MouseDrawer):
+    DEFAULT_BOX_COLOR = (249, 202, 144)
+    DEFAULT_BOX_EDGES_COLOR = (243, 150, 33)
+
+    def __init__(self, widget, namespace='', callback=None):
+        super(MouseArrowDrawer, self).__init__(widget, namespace, callback)
+        self.p1 = None
+        self.p2 = None
+
+    def reset(self):
+        self.p1 = self.p2 = None
+
+    def manageClick(self, evt):
+        if evt.button() == 1:
+            pos = self.relativeCoordinates(evt)
+            self.p1 = pos
+            self.p2 = None
+        if evt.button() == 2:
+            self.p1 = self.p2 = None
+
+    def manageMouseMove(self, evt):
+        pos = self.relativeCoordinates(evt)
+        if self.p1 != None:
+            self.p2 = pos
+
+    def manageMouseRelease(self, evt):
+        if self.p1 != None and self.p2 != None:
+            if self.callback != None:
+                self.callback(self.getCurrentData())
+
+    def drawGizmo(self, image):
+        if self.p1 != None and self.p2 != None:
+            cv2.line(image, self.p1, self.p2, MouseBoxDrawer.DEFAULT_BOX_COLOR, 2)
+            # cv2.rectangle(image, self.p1, self.p2,
+            #               MouseBoxDrawer.DEFAULT_BOX_COLOR, 2)
+            cv2.circle(image, self.p1, 5,
+                       MouseBoxDrawer.DEFAULT_BOX_EDGES_COLOR, -1)
+            cv2.circle(image, self.p2, 5,
+                       MouseBoxDrawer.DEFAULT_BOX_EDGES_COLOR, -1)
+
+    def getCurrentData(self):
+        if self.p1 != None and self.p2 != None:
+            return {'type': self.namespace, 'rect': (self.p1, self.p2)}
+        return super.getCurrentData()
+
+
 class MouseBoxDrawer(MouseDrawer):
     DEFAULT_BOX_COLOR = (249, 202, 144)
     DEFAULT_BOX_EDGES_COLOR = (243, 150, 33)
@@ -101,6 +147,7 @@ class WSceneFrameVisualizer(WBaseWidget):
         # Interaction
         self.enable_interaction = False
         self.current_drawer = MouseBoxDrawer(self, 'BOX', self.drawerCallback)
+        #self.current_drawer = MouseArrowDrawer(self, 'ARROW', self.drawerCallback)
         self.drawer_callbacks = []
 
     def enableInteraction(self, status=True):
@@ -217,7 +264,8 @@ class WSceneFrameVisualizer(WBaseWidget):
                     camera_frame=self.current_frame.getCameraPose(),
                     camera=self.scene.camera_params,
                     thickness=thick,
-                    color=color
+                    color=color,
+                    draw_rf=True
                 )
 
     def drawLabel(self, image, label, color=colors.getColor('green')):
