@@ -3,7 +3,7 @@
 As stated in the paper, here are all the training datasets used in our experiments:
 
 * Industrial Dataset:
-  * [Industrial_1000_A](http://www.vision.deis.unibo.it/Roars/Industrial_1000_A.tar.gz) , [Industrial_1000_M](http://www.vision.deis.unibo.it/Roars/Industrial_1000_M.tar.gz) , [Industrial_3000_A](http://www.vision.deis.unibo.it/Roars/Industrial_3000_A.tar.gz) , [Industrial_5000_A](http://www.vision.deis.unibo.it/Roars/Industrial_5000_A.tar.gz) , [Industrial_15000_A](http://www.vision.deis.unibo.it/Roars/Industrial_15000_A.tar.gz) , [Industrial_Test_A](http://www.vision.deis.unibo.it/Roars/Industrial_Test_A.tar.gz) , [Industrial_Test_M](http://www.vision.deis.unibo.it/Roars/Industrial_Test_M.tar.gz) 
+  * [Industrial_1000_A](http://www.vision.deis.unibo.it/Roars/Industrial_1000_A.tar.gz) , [Industrial_1000_M](http://www.vision.deis.unibo.it/Roars/Industrial_1000_M.tar.gz) , [Industrial_3000_A](http://www.vision.deis.unibo.it/Roars/Industrial_3000_A.tar.gz) , [Industrial_5000_A](http://www.vision.deis.unibo.it/Roars/Industrial_5000_A.tar.gz) , [Industrial_15000_A](http://www.vision.deis.unibo.it/Roars/Industrial_15000_A.tar.gz) , [Industrial_Test_A](http://www.vision.deis.unibo.it/Roars/Industrial_Test_A.tar.gz) , [Industrial_Test_M](http://www.vision.deis.unibo.it/Roars/Industrial_Test_M.tar.gz) , [Industrial_1000_SLAM](http://www.vision.deis.unibo.it/Roars/Industrial_Slam.zip) 
 * Fruits Dataset:
   * [Fruits_2500](http://www.vision.deis.unibo.it/Roars/Fruits_2500.tar.gz) , [Fruits_5000](http://www.vision.deis.unibo.it/Roars/Fruits_5000.tar.gz) , [Fruits_7500](http://www.vision.deis.unibo.it/Roars/Fruits_7500.tar.gz) , [Fruits_Test](http://www.vision.deis.unibo.it/Roars/Fruits_Test.tar.gz)
 
