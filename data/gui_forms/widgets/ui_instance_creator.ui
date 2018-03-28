@@ -22,7 +22,7 @@
   <property name="styleSheet">
    <string notr="true"/>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0,1,2">
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0,1,2,0">
    <item>
     <widget class="QLabel" name="label_4">
      <property name="sizePolicy">
@@ -95,6 +95,13 @@
      </property>
      <property name="text">
       <string>Create Instance</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="ui_button_clone">
+     <property name="text">
+      <string>Clone Selected Instance</string>
      </property>
     </widget>
    </item>

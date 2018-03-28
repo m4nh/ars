@@ -144,6 +144,9 @@ class MainWindow(PyQtWindow):
         elif data[1] == "NEW_INSTANCE":
             print("NEW ISNTANCE", data[2])
             self.createNewInstance(data[2])
+        elif data[1] == "CLONE_INSTANCE":
+            print("CLONE_INSTANCE")
+            self.cloneInstance()
 
     def save(self):
         if self.showPromptBool(title='Saving Scene', message='Are you sure?'):
@@ -180,7 +183,8 @@ class MainWindow(PyQtWindow):
 
         if dataset_type == 'MASK':
             from roars.datasets.generators.maskgenerator import MaskDatasetBuilder
-            dataset_builder = MaskDatasetBuilder(dataset, outpath, jumps=1, boxed_instances=True)
+            dataset_builder = MaskDatasetBuilder(
+                dataset, outpath, jumps=1, boxed_instances=True)
             if dataset_builder.build():
                 self.showDialog('Dataset built! Folder: {}'.format(outpath))
             else:
@@ -238,6 +242,19 @@ class MainWindow(PyQtWindow):
         training_class = self.scene.getTrainingClass(-1, force_creation=True)
         inst = TrainingInstance(frame=data["frame"], size=data["size"])
         training_class.instances.append(inst)
+
+        self.setInstances(self.scene.getAllInstances())
+        self.refresh()
+
+    def cloneInstance(self, instance=None):
+        if instance is None:
+            instance = self.ui_instances_list.getSelectedInstance()
+        ci = instance.copy()
+        training_class = self.scene.getTrainingClass(
+            ci.label,
+            force_creation=True
+        )
+        training_class.instances.append(ci)
 
         self.setInstances(self.scene.getAllInstances())
         self.refresh()

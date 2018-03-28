@@ -28,6 +28,9 @@ class WInstancesList(WBaseWidget):
         if self.newCallback:
             self.ui_list.doubleClicked.connect(self.newCallback)
 
+    def getSelectedInstance(self):
+        return self.instances[self.selected_instance]
+
     def getInstances(self):
         return self.instances
 

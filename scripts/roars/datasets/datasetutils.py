@@ -586,6 +586,14 @@ class TrainingInstance(PyKDL.Frame):
         self.size = size
         self.label = label
 
+    def copy(self):
+        c = TrainingInstance()
+        c.M = self.M
+        c.p = self.p
+        c.size = self.size
+        c.label = self.label
+        return c
+
     def getRPY(self):
         return self.M.GetRPY()
 

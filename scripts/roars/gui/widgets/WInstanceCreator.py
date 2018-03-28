@@ -27,6 +27,7 @@ class WInstanceCreator(WBaseWidget):
         self.boxes = []
 
         self.ui_button_create.clicked.connect(self.computeFrustumIntersection)
+        self.ui_button_clone.clicked.connect(self.cloneInstance)
 
         #⬢⬢⬢⬢⬢➤ Change Callback
         self.changeCallback = changeCallback
@@ -48,6 +49,9 @@ class WInstanceCreator(WBaseWidget):
         else:
             self.changeCallback((self.name, "DISABLE_EDITING"))
             self.reset()
+
+    def cloneInstance(self):
+        self.changeCallback((self.name, "CLONE_INSTANCE"))
 
     def reset(self):
         self.boxes = []
