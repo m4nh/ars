@@ -1,7 +1,26 @@
 """Logger functions."""
 
+try:
+    import rospy
+except:
+    class rospy(object):
+        @staticmethod
+        def loginfo(*args):
+            print(args)
+
+        @staticmethod
+        def logerr(*args):
+            print(args)
+
+        @staticmethod
+        def logwarn(*args):
+            print(args)
+
+        @staticmethod
+        def logdebug(*args):
+            print(args)
+
 import numpy
-import rospy
 import inspect
 
 

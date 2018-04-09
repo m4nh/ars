@@ -44,5 +44,9 @@
         "typeinfo": "cpp",
         "utility": "cpp",
         "*.ipp": "cpp"
-    }
+    },
+    "python.pythonPath": "/Users/daniele/anaconda3/bin/python",
+    "python.autoComplete.extraPaths": [
+        "/Users/daniele/Desktop/PhD/Roars/ars/scripts"
+    ]
 }

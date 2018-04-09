@@ -178,14 +178,14 @@ class TrainingScene(object):
     def initialize(self):
         ''' Initializes the Scene searching for Images and camera poses '''
 
-        #⬢⬢⬢⬢⬢➤ Checks for Scene path
+        # ⬢⬢⬢⬢⬢➤ Checks for Scene path
         if os.path.exists(self.scene_path):
             images_path = os.path.join(self.scene_path, self.images_path)
         else:
             print("Scene path doesn't exist: {}".format(self.scene_path))
             return
 
-        #⬢⬢⬢⬢⬢➤ Checks for Images folder path
+        # ⬢⬢⬢⬢⬢➤ Checks for Images folder path
         if os.path.exists(images_path):
             # Lists all Images in scene
             files_temp = glob.glob(os.path.join(images_path, '*.jpg'))
@@ -199,7 +199,7 @@ class TrainingScene(object):
             print("Images path doesn't exist: {}".format(images_path))
             return
 
-        #⬢⬢⬢⬢⬢➤ Checks for camera params
+        # ⬢⬢⬢⬢⬢➤ Checks for camera params
         if self.camera_intrisics_file == '':
             camera_param_path = os.path.join(
                 self.scene_path,
@@ -216,14 +216,14 @@ class TrainingScene(object):
                 self.camera_params = TrainingCamera(
                     configuration_file=camera_param_path)
 
-            except Exception, e:
+            except Exception as e:
                 print(e)
                 return
         else:
             print("Camera params path doesn't exist: {}".format(camera_param_path))
             return
 
-        #⬢⬢⬢⬢⬢➤ Checks for camera poses path
+        # ⬢⬢⬢⬢⬢➤ Checks for camera poses path
         if self.camera_extrinsics_file == '':
             camera_pose_path = os.path.join(
                 self.scene_path,
@@ -237,17 +237,17 @@ class TrainingScene(object):
             # Load Camera Pose Frame
             try:
                 self.robot_to_camera_pose = np.loadtxt(camera_pose_path)
-            except Exception, e:
+            except Exception as e:
                 print(e)
                 return
         else:
             print("Camera transform path doesn't exist: {}".format(camera_pose_path))
             return
 
-        #⬢⬢⬢⬢⬢➤ Stores images paths A-Z
+        # ⬢⬢⬢⬢⬢➤ Stores images paths A-Z
         self.image_filenames_lists = sorted(files)
 
-        #⬢⬢⬢⬢⬢➤ Checks for Robot poses path
+        # ⬢⬢⬢⬢⬢➤ Checks for Robot poses path
         robot_pose_path = os.path.join(
             self.scene_path,
             self.robot_pose_name if '.txt' in self.robot_pose_name else self.robot_pose_name + ".txt"
@@ -260,7 +260,7 @@ class TrainingScene(object):
             print("Robot poses path doesn't exist: {}".format(robot_pose_path))
             return
 
-        #⬢⬢⬢⬢⬢➤ Checks for arrays consistency
+        # ⬢⬢⬢⬢⬢➤ Checks for arrays consistency
         if len(self.robot_poses) == len(self.image_filenames_lists):
             self.initialized = True
             return
@@ -359,7 +359,7 @@ class TrainingScene(object):
 
     def getImageDepthPath(self, index):
         try:
-            if self.images_depth_path == None:
+            if self.images_depth_path is None:
                 return None
         except:
             return None
@@ -407,12 +407,12 @@ class TrainingScene(object):
         if force_relative:
             self.setRelativePath(filename)
 
-        #⬢⬢⬢⬢⬢➤ Remove Relative Path if any
-        if self.relative_path != None:
+        # ⬢⬢⬢⬢⬢➤ Remove Relative Path if any
+        if self.relative_path is not None:
             self.scene_path = os.path.relpath(
                 self.scene_path, self.relative_path)
 
-        #⬢⬢⬢⬢⬢➤ Save
+        # ⬢⬢⬢⬢⬢➤ Save
         scene_js = json.dumps(
             self,
             cls=CustomJSONEncoder,
@@ -421,8 +421,8 @@ class TrainingScene(object):
         with open(filename, "w") as outfile:
             outfile.write(scene_js)
 
-        #⬢⬢⬢⬢⬢➤ Restore relative path if any
-        if self.relative_path != None:
+        # ⬢⬢⬢⬢⬢➤ Restore relative path if any
+        if self.relative_path is not None:
             self.scene_path = os.path.join(self.relative_path, self.scene_path)
 
     def validateImport(self):
@@ -438,7 +438,7 @@ class TrainingScene(object):
             sc.validateImport()
             sc.initFromManifest(filename)
             return sc
-        except ValueError, e:
+        except ValueError as e:
             return None
 
     def getTrainingClassByLabel(self, label):
@@ -599,9 +599,9 @@ class TrainingInstance(PyKDL.Frame):
 
     def setRPY(self, r2, p2, y2):
         r, p, y = self.getRPY()
-        r2 = r if r2 == None else r2
-        p2 = p if p2 == None else p2
-        y2 = y if y2 == None else y2
+        r2 = r if r2 is None else r2
+        p2 = p if p2 is None else p2
+        y2 = y if y2 is None else y2
         self.M = PyKDL.Rotation.RPY(r2, p2, y2)
 
     def setSize(self, sx, sy, sz):
@@ -641,9 +641,9 @@ class TrainingInstance(PyKDL.Frame):
             self.relativeTranslation(z=delta)
 
     def relativeTranslation(self, x=None, y=None, z=None):
-        x = x if x != None else 0.0
-        y = y if y != None else 0.0
-        z = z if z != None else 0.0
+        x = x if x is not None else 0.0
+        y = y if y is not None else 0.0
+        z = z if z is not None else 0.0
         tv = PyKDL.Frame(PyKDL.Vector(x, y, z))
         current = PyKDL.Frame()
         current.M = self.M
@@ -853,13 +853,13 @@ class TrainingDataset(object):
 
     @staticmethod
     def buildDatasetFromManifestsFolder(manifests_folder):
-        #⬢⬢⬢⬢⬢➤ Load manifests files
+        # ⬢⬢⬢⬢⬢➤ Load manifests files
         manifests = []
         for root, directories, files in os.walk(manifests_folder):
             manifests = files
             break
 
-        #⬢⬢⬢⬢⬢➤ Load scenes
+        # ⬢⬢⬢⬢⬢➤ Load scenes
         scenes = []
         frames_counter = 0
         for man in manifests:
@@ -939,7 +939,7 @@ class RawDatasetBuilder(DatasetBuilder):
             f.write(frame.getId())
             f.close()
 
-            print frame.getId()
+            print(frame.getId())
             counter = counter + 1
 
         return True
@@ -962,7 +962,7 @@ class PixDatasetBuilder(DatasetBuilder):
 
         os.mkdir(self.dest_folder)
 
-        #⬢⬢⬢⬢⬢➤ Generates frames subsplit in TRAIN;TEST;VAL
+        # ⬢⬢⬢⬢⬢➤ Generates frames subsplit in TRAIN;TEST;VAL
         if self.val_percentage > 0.00001 or self.test_percentage > 0.00001:
             frames_splits = self.training_dataset.generateRandomFrameSet(
                 self.test_percentage, self.val_percentage)
@@ -992,7 +992,7 @@ class PixDatasetBuilder(DatasetBuilder):
                     # shutil.copyfile(frame.getImagePath(), img_file)
 
                     gts = frame.getInstancesBoxesWithLabels()
-                    print name, frame.getId()
+                    print(name, frame.getId())
                     img = cv2.imread(frame.getImagePath())
                     pair = np.ones(img.shape, dtype=np.uint8) * 255
                     for inst in gts:
@@ -1003,7 +1003,7 @@ class PixDatasetBuilder(DatasetBuilder):
                     whole = np.hstack((pair, img))
 
                     img_file = os.path.join(folder, counter_string + ".jpg")
-                    print "Writing to", img_file
+                    print("Writing to", img_file)
                     cv2.imwrite(img_file, whole)
                     # full_stack.append(whole)
 
@@ -1032,7 +1032,7 @@ class YoloDatasetBuilder(DatasetBuilder):
         test_percentage = options["test_percentage"] if "test_percentage" in options else 0.05
         validity_percentage = options["validity_percentage"] if "validity_percentage" in options else 0.0
 
-        #⬢⬢⬢⬢⬢➤ GENERATES SUBSETS
+        # ⬢⬢⬢⬢⬢➤ GENERATES SUBSETS
         trains, tests, vals = self.training_dataset.generateRandomFrameSet(
             test_percentage, validity_percentage)
 
@@ -1152,3 +1152,172 @@ class RawDataset(object):
 
     def getImageById(self, id):
         return self.image_maps[id]
+
+
+##########################################################################
+##########################################################################
+##########################################################################
+##########################################################################
+##########################################################################
+##########################################################################
+
+class CompassDatasetBuilder(DatasetBuilder):
+    ZERO_PADDING_SIZE = 5
+
+    def __init__(self, training_dataset, dest_folder, jumps=1, angle_discretization=20.0, augmentation=[1, 1], val_percentage=0.05, test_percentage=0.1, randomize_frames=False):
+        super(CompassDatasetBuilder, self).__init__(
+            training_dataset, dest_folder)
+        self.jumps = jumps
+        self.val_percentage = val_percentage
+        self.test_percentage = test_percentage
+        self.randomize_frames = randomize_frames
+        self.angle_discretization = angle_discretization
+
+    def build(self, options={}):
+
+        if os.path.exists(self.dest_folder) or len(self.dest_folder) == 0:
+            return False
+
+        os.mkdir(self.dest_folder)
+
+        img_folder = os.path.join(self.dest_folder, "images")
+        label_folder = os.path.join(self.dest_folder, "labels")
+        ids_folder = os.path.join(self.dest_folder, "ids")
+
+        os.mkdir(img_folder)
+        os.mkdir(label_folder)
+        os.mkdir(ids_folder)
+
+        frames = self.training_dataset.getAllFrames()
+
+        counter = 0
+        for frame in frames:
+
+            counter_string = '{}'.format(str(counter).zfill(
+                RawDatasetBuilder.ZERO_PADDING_SIZE))
+
+            img_file = os.path.join(img_folder, counter_string + ".jpg")
+            label_file = os.path.join(label_folder, counter_string + ".txt")
+            id_file = os.path.join(ids_folder, counter_string + ".txt")
+
+            print("IAMGE COPYING", frame.getImagePath(), img_file)
+            shutil.copyfile(frame.getImagePath(), img_file)
+
+            gts = np.array(frame.getInstancesGT())
+            boxes = frame.getInstancesBoxes()
+            max_class = int(360.0 / self.angle_discretization)
+            for i, box in enumerate(boxes):
+                print("GT", box)
+                # Angle
+                direction = np.array(box[0]) - np.array(box[3])
+                angle = math.atan2(
+                    direction[1], direction[0]) * 180.0 / np.pi
+                if angle < 0:
+                    angle = 360.0 + angle
+                angle_class = int(angle / self.angle_discretization)
+
+                gts[i, 0] = gts[i, 0] * max_class + angle_class
+
+            if gts.size == 0:
+                open(label_file, 'a').close()
+            else:
+                np.savetxt(label_file, gts, fmt='%d %1.4f %1.4f %1.4f %1.4f')
+
+            f = open(id_file, 'w')
+            f.write(frame.getId())
+            f.close()
+
+            print(frame.getId())
+            counter = counter + 1
+
+        return True
+
+    # def build(self, options={}):
+
+    #     if os.path.exists(self.dest_folder) or len(self.dest_folder) == 0:
+    #         return False
+
+    #     # os.mkdir(self.dest_folder)
+
+    #     # ⬢⬢⬢⬢⬢➤ Generates frames subsplit in TRAIN;TEST;VAL
+    #     if self.val_percentage > 0.00001 or self.test_percentage > 0.00001:
+    #         frames_splits = self.training_dataset.generateRandomFrameSet(
+    #             self.test_percentage, self.val_percentage)
+    #     else:
+    #         frames_splits = (self.training_dataset.getAllFrames(), [], [])
+    #     split_names = ['train', 'test', 'val']
+
+    #     counter = 0
+    #     for index in range(0, len(frames_splits)):
+    #         frames = frames_splits[index]
+    #         name = split_names[index]
+
+    #         folder = os.path.join(self.dest_folder, name)
+
+    #         # os.mkdir(folder)
+
+    #         counter = 0
+    #         for frame in frames:
+    #             if counter % self.jumps == 0:
+    #                 counter_string = '{}'.format(str(int(counter / self.jumps)).zfill(
+    #                     CompassDatasetBuilder.ZERO_PADDING_SIZE))
+
+    #                 # img_file = os.path.join(img_folder, counter_string + ".jpg")
+    #                 # label_file = os.path.join(label_folder, counter_string + ".txt")
+    #                 # id_file = os.path.join(ids_folder, counter_string + ".txt")
+
+    #                 # print("IAMGE COPYING", frame.getImagePath(), img_file)
+    #                 # shutil.copyfile(frame.getImagePath(), img_file)
+
+    #                 gts = frame.getInstancesBoxes()
+    #                 gts_frames = frame.getInstancesGT()
+    #                 print(gts_frames)
+    #                 img = cv2.imread(frame.getImagePath())
+    #                 direction = np.array(gts[0][0]) - np.array(gts[0][3])
+
+    #                 # Angle
+    #                 angle = math.atan2(
+    #                     direction[1], direction[0]) * 180.0 / np.pi
+    #                 if angle < 0:
+    #                     angle = 360.0 + angle
+
+    #                 angle_class = int(angle / self.angle_discretization)
+
+    #                 cv2.line(img, tuple(gts[0][3]),
+    #                          tuple(gts[0][0]), (255, 0, 0))
+    #                 VirtualObject.drawFrame(gts_frames[0], img)
+
+    #                 print("ANGLE", angle_class)
+    #                 cv2.imshow("img", img)
+    #                 cv2.waitKey(0)
+    #                 print(gts)
+
+    #                 # print(name, frame.getId())
+    #                 # img = cv2.imread(frame.getImagePath())
+    #                 # pair = np.ones(img.shape, dtype=np.uint8) * 255
+    #                 # for inst in gts:
+    #                 #     hull = cv2.convexHull(np.array(inst[1]))
+    #                 #     cv2.fillConvexPoly(
+    #                 #         pair, hull, TrainingClass.getColorByLabel(inst[0]))
+
+    #                 # whole = np.hstack((pair, img))
+
+    #                 # img_file = os.path.join(folder, counter_string + ".jpg")
+    #                 # print("Writing to", img_file)
+    #                 # cv2.imwrite(img_file, whole)
+    #                 # full_stack.append(whole)
+
+    #                 # import sys
+    #                 # sys.exit(0)
+    #                 # if gts.size == 0:
+    #                 #     open(label_file, 'a').close()
+    #                 # else:
+    #                 #     np.savetxt(label_file, gts, fmt='%d %1.4f %1.4f %1.4f %1.4f')
+
+    #                 # f = open(id_file, 'w')
+    #                 # f.write(frame.getId())
+    #                 # f.close()
+
+    #             counter = counter + 1
+
+    #     return True

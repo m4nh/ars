@@ -141,7 +141,7 @@ class VirtualObject(PyKDL.Frame):
         return out_points
 
     def getImagePoints(self, options=VirtualObjectOptions(), camera_frame=PyKDL.Frame(), camera=None):
-        if camera == None:
+        if camera is None:
             return []
         obj_points = self.getObjectPoints(
             camera_frame=camera_frame,
@@ -162,8 +162,8 @@ class VirtualObject(PyKDL.Frame):
                            int(img_points.item(i, 0, 1))))
         return points
 
-    def getImageFrame(self, points=None,  options=VirtualObjectOptions(), grow_factor=1.0, camera_frame=PyKDL.Frame(), camera=None, only_top_face=True):
-        if points == None:
+    def getImageFrame(self, points=None, options=VirtualObjectOptions(), grow_factor=1.0, camera_frame=PyKDL.Frame(), camera=None, only_top_face=True):
+        if points is None:
             points = self.getImagePoints(
                 options=options,
                 camera=camera,
@@ -257,22 +257,23 @@ class VirtualObject(PyKDL.Frame):
             cv2.line(output, points[3], points[7], color, thickness)
 
             # Z
-            cv2.line(output, points[7], points[3], (0, 0, 255), thickness=thickness + 1)
+            cv2.line(output, points[7], points[3],
+                     (0, 0, 255), thickness=thickness + 1)
             # X
-            cv2.line(output, points[7], points[4], (255, 0, 0), thickness=thickness + 1)
+            cv2.line(output, points[7], points[4],
+                     (255, 0, 0), thickness=thickness + 1)
             # Y
-            cv2.line(output, points[6], points[7], (0, 255, 0), thickness=thickness + 1)
+            cv2.line(output, points[6], points[7],
+                     (0, 255, 0), thickness=thickness + 1)
 
-            #cv2.line(output, points[5], points[6], (255, 255, 0.0), thickness=thickness + 1)
-            #cv2.line(output, points[6], points[7], (0.0, 255, 0.0), thickness=thickness + 1)
-            #cv2.line(output, points[3], points[7], (0, 0.0, 255.0), thickness=thickness + 1)
-            #cv2.line(output, points[7], points[4], (0, 255.0, 0.0), thickness=thickness + 1)
         except:
             pass
 
     @staticmethod
     def drawFrame(frame_data, output, color=np.array([255, 0, 255]), thickness=2):
 
+        if(len(frame_data) >= 5):
+            frame_data = frame_data[1:5]
         width = output.shape[1]
         height = output.shape[0]
 
@@ -388,7 +389,7 @@ class BoundingBoxFromSixPoints(GenericBoundingBox):
             if plane.isValid():
                 self.plane_rf = plane.rf
 
-                #⬢⬢⬢⬢⬢➤ Z SIZE relative to Plane
+                # ⬢⬢⬢⬢⬢➤ Z SIZE relative to Plane
                 p5 = points[4]
                 p6 = points[5]
                 p5 = plane.getRelativePoint(p5)

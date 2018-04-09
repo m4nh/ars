@@ -1,13 +1,7 @@
-"""Homogeneous Transformation Matrices and Quaternions."""
-
 import math
 import numpy
 import PyKDL
-import rospy
-import tf
 import cv2
-from geometry_msgs.msg import Pose
-from geometry_msgs.msg import Twist
 
 # epsilon for testing whether a number is close to zero
 _EPS = numpy.finfo(float).eps * 4.0
@@ -36,31 +30,6 @@ def tfToKDL(tf):
         tf[1][3]
     )
     return frame
-
-
-def tfToPose(tf):
-    pose = Pose()
-    pose.position.x = tf[0][0]
-    pose.position.y = tf[0][1]
-    pose.position.z = tf[0][2]
-    pose.orientation.x = tf[1][0]
-    pose.orientation.y = tf[1][1]
-    pose.orientation.z = tf[1][2]
-    pose.orientation.w = tf[1][3]
-    return pose
-
-
-def KDLToPose(frame):
-    tf = KDLtoTf(frame)
-    pose = Pose()
-    pose.position.x = tf[0][0]
-    pose.position.y = tf[0][1]
-    pose.position.z = tf[0][2]
-    pose.orientation.x = tf[1][0]
-    pose.orientation.y = tf[1][1]
-    pose.orientation.z = tf[1][2]
-    pose.orientation.w = tf[1][3]
-    return pose
 
 
 def PoseToKDL(pose):
@@ -205,21 +174,6 @@ def FrameVectorToKDL(frame_v):
     return frame
 
 
-def TwistToKDLVector(msg):
-    x = msg.linear.x
-    y = msg.linear.y
-    z = msg.linear.z
-    return PyKDL.Vector(x, y, z)
-
-
-def TwistFormKDLVector(vector):
-    twist_msg = Twist()
-    twist_msg.linear.x = vector.x()
-    twist_msg.linear.y = vector.y()
-    twist_msg.linear.z = vector.z()
-    return twist_msg
-
-
 def ListToKDLVector(list):
     return PyKDL.Vector(list[0], list[1], list[2])
 
@@ -327,31 +281,6 @@ def planeCoefficientsFromFrame(frame):
     c = normal.z()
     d = -(a * frame.p.x() + b * frame.p.y() + c * frame.p.z())
     return numpy.array([a, b, c, d]).reshape(4)
-
-
-def retrieveTransform(listener, base_tf, target_tf, time=rospy.Time(0), print_error=False, none_error=False):
-    """  Retrieves transform from TF wrapping in a PyKDL.Frame """
-    # TODO: implement WAIT FOR in addition to LOOK UP
-    try:
-        tf_transform = listener.lookupTransform(base_tf, target_tf, time)
-        frame = tfToKDL(tf_transform)
-        return frame
-    except (tf.ExtrapolationException, tf.LookupException, tf.ConnectivityException) as e:
-        if print_error == True:
-            print("{}".format(str(e)))
-        if none_error:
-            return None
-        else:
-            return PyKDL.Frame()
-
-
-def broadcastTransform(br, frame, frame_id, parent_frame, time=rospy.Time(0)):
-    """  Broadcasts PyKDL.Frame to TF tree """
-    br.sendTransform((frame.p.x(), frame.p.y(), frame.p.z()),
-                     frame.M.GetQuaternion(),
-                     time,
-                     frame_id,
-                     parent_frame)
 
 
 def cloneFrame(frame):

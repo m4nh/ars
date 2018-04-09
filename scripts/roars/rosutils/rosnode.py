@@ -1,10 +1,54 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
-import pkgutil
-import rospy
-import tf
-import rospkg
+try:
+    import rospy
+except:
+    class rospy(object):
+        @staticmethod
+        def init_node(name, disable_signals=None):
+            pass
+
+        @staticmethod
+        def get_param(name, name2):
+            pass
+
+        class Time(object):
+            def __init__(self, time):
+                pass
+
+            @staticmethod
+            def now():
+                return 0
+
+        class Rate(object):
+            def __init__(self, rate):
+                pass
+
+            def sleep(self):
+                pass
+
+
+try:
+    import tf
+except:
+    class tf(object):
+        class TransformListener(object):
+            pass
+
+        class TransformBroadcaster(object):
+            pass
+
+try:
+    import rospkg
+except:
+    class rospkg(object):
+        class RosPack(object):
+            @staticmethod
+            def get_path(pkg_name):
+                return pkg_name
+
+
 import os
 import roars.geometry.transformations as transformations
 from roars.rosutils.logger import Logger
@@ -25,7 +69,8 @@ class RosNode(object):
     def __init__(self, node_name="new_node", hz=30, disable_signals=False):
         self.node_name = node_name
         self.hz = hz
-        self._node = rospy.init_node(self.node_name, disable_signals=disable_signals)
+        self._node = rospy.init_node(
+            self.node_name, disable_signals=disable_signals)
 
         if self.hz > 0:
             self.rate = rospy.Rate(self.hz)
@@ -106,12 +151,12 @@ class RosNode(object):
         return not rospy.is_shutdown()
 
     def getTFListener(self):
-        if self.tf_listener == None:
+        if self.tf_listener is None:
             self.tf_listener = tf.TransformListener()
         return self.tf_listener
 
     def getTFBroadcaster(self):
-        if self.tf_broadcaster == None:
+        if self.tf_broadcaster is None:
             self.tf_broadcaster = tf.TransformBroadcaster()
         return self.tf_broadcaster
 
@@ -127,7 +172,7 @@ class RosNode(object):
         return self.getCurrentTimeInSecs() - self.starting_time
 
     def broadcastTransform(self, frame, frame_id, parent_frame_id, time):
-        transformations.broadcastTransform(
+        self._broadcastTransform(
             self.getTFBroadcaster(),
             frame,
             frame_id,
@@ -135,10 +180,33 @@ class RosNode(object):
             time
         )
 
+    def _retrieveTransform(listener, base_tf, target_tf, time=rospy.Time(0), print_error=False, none_error=False):
+        """  Retrieves transform from TF wrapping in a PyKDL.Frame """
+        # TODO: implement WAIT FOR in addition to LOOK UP
+        try:
+            tf_transform = listener.lookupTransform(base_tf, target_tf, time)
+            frame = tfToKDL(tf_transform)
+            return frame
+        except (tf.ExtrapolationException, tf.LookupException, tf.ConnectivityException) as e:
+            if print_error is True:
+                print("{}".format(str(e)))
+            if none_error:
+                return None
+            else:
+                return PyKDL.Frame()
+
+    def _broadcastTransform(br, frame, frame_id, parent_frame, time=rospy.Time(0)):
+        """  Broadcasts PyKDL.Frame to TF tree """
+        br.sendTransform((frame.p.x(), frame.p.y(), frame.p.z()),
+                         frame.M.GetQuaternion(),
+                         time,
+                         frame_id,
+                         parent_frame)
+
     def retrieveTransform(self, frame_id, parent_frame_id, time):
         if time == -1:
             time = rospy.Time(0)
-        return transformations.retrieveTransform(self.getTFListener(), parent_frame_id, frame_id, time, none_error=True, print_error=True)
+        return self._retrieveTransform(self.getTFListener(), parent_frame_id, frame_id, time, none_error=True, print_error=True)
 
     def getFileInPackage(self, pkg_name, file_path):
         pack_path = self.rospack.get_path(pkg_name)
