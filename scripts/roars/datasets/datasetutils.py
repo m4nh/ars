@@ -1164,7 +1164,7 @@ class RawDataset(object):
 class CompassDatasetBuilder(DatasetBuilder):
     ZERO_PADDING_SIZE = 5
 
-    def __init__(self, training_dataset, dest_folder, jumps=1, angle_discretization=20.0, augmentation=[1, 1], val_percentage=0.05, test_percentage=0.1, randomize_frames=False):
+    def __init__(self, training_dataset, dest_folder, jumps=1, angle_discretization=20.0,  val_percentage=0.05, test_percentage=0.1, randomize_frames=False):
         super(CompassDatasetBuilder, self).__init__(
             training_dataset, dest_folder)
         self.jumps = jumps
@@ -1207,7 +1207,6 @@ class CompassDatasetBuilder(DatasetBuilder):
             boxes = frame.getInstancesBoxes()
             max_class = int(360.0 / self.angle_discretization)
             for i, box in enumerate(boxes):
-                print("GT", box)
                 # Angle
                 direction = np.array(box[0]) - np.array(box[3])
                 angle = math.atan2(
@@ -1216,7 +1215,10 @@ class CompassDatasetBuilder(DatasetBuilder):
                     angle = 360.0 + angle
                 angle_class = int(angle / self.angle_discretization)
 
-                gts[i, 0] = gts[i, 0] * max_class + angle_class
+                temp = gts[i, 0] * max_class + angle_class
+                print("CONVERTING", gts[i, 0], temp)
+                gts[i, 0] = temp
+                print(" -> ", gts[i])
 
             if gts.size == 0:
                 open(label_file, 'a').close()
