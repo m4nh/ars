@@ -2,7 +2,7 @@
 # -*- encoding: utf-8 -*-
 
 import roars
-from roars.datasets.datasetutils import CompassDatasetBuilder, PixDatasetBuilder, RawDatasetBuilder, TrainingScene, TrainingClassesMap, TrainingClass, TrainingInstance, TrainingDataset
+from roars.datasets.datasetutils import CompassDatasetBuilder, CompassRegressionDatasetBuilder, PixDatasetBuilder, RawDatasetBuilder, TrainingScene, TrainingClassesMap, TrainingClass, TrainingInstance, TrainingDataset
 from roars.rosutils.rosnode import RosNode
 from roars.datasets.datasetutils import JSONHelper
 from roars.gui.pyqtutils import PyQtWindow, PyQtImageConverter, PyQtWidget
@@ -180,7 +180,7 @@ class MainWindow(PyQtWindow):
             self.scene.save(self.scene_filename)
 
     def generate(self):
-        dataset_type = 'COMPASS'  # TODO: configuration or option
+        dataset_type = 'COMPASS_REGRESSION'  # TODO: configuration or option
         dname = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
         basename = os.path.basename(scene_manifest_file)
         basename = os.path.splitext(basename)[0]
@@ -212,7 +212,13 @@ class MainWindow(PyQtWindow):
             dataset_builder = CompassDatasetBuilder(
                 dataset, outpath, jumps=1, val_percentage=0.0, test_percentage=0.0)
             if dataset_builder.build():
-                print("PINO")
+                print("Compass Built!")
+
+        if dataset_type == 'COMPASS_REGRESSION':
+            dataset_builder = CompassRegressionDatasetBuilder(
+                dataset, outpath, jumps=1, val_percentage=0.0, test_percentage=0.0)
+            if dataset_builder.build():
+                print("Compass Regression Built!")
 
         if dataset_type == 'MASK':
             from roars.datasets.generators.maskgenerator import MaskDatasetBuilder
