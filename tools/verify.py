@@ -51,5 +51,17 @@ for row in data:
     cv2.putText(image, "C{}".format(label + 1),
                 (int(x), int(y)), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255), 2)
 
+    if len(row) >= 6:
+        angle = row[5]
+
+        versor = np.array([np.cos(angle), np.sin(angle)])
+
+        center = np.array([x + w * 0.5, y + w * 0.5])
+        tip = center + versor * 30
+
+        cv2.line(image, tuple(center.astype(int)),
+                 tuple(tip.astype(int)), (0, 255, 0), 2)
+        cv2.circle(image, tuple(center.astype(int)), 5, (255, 255, 255), -1)
+
 cv2.imshow("image", image)
 cv2.waitKey(0)
